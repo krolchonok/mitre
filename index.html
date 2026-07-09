@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MITRE → Draw.io</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>MITRE → Draw.io</h1>
+        <p>
+          Отметьте тактики и техники, затем скачайте готовый файл draw.io для
+          диаграммы.
+        </p>
+      </div>
+      <div class="header-actions">
+        <button id="select-all-btn" type="button" class="secondary">
+          Выбрать всё
+        </button>
+        <button id="clear-btn" type="button" class="secondary">Очистить</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="controls">
+        <div class="controls-left">
+          <button id="generate-btn" type="button" disabled>
+            MITRE draw.io
+          </button>
+          <button id="generate-fstec-btn" type="button" class="secondary" disabled>
+            FSTEC draw.io
+          </button>
+          <span id="selection-counter">0 техник выбрано</span>
+        </div>
+        <button id="settings-toggle" type="button" class="secondary settings-toggle">
+          Проекты и импорт
+        </button>
+      </section>
+
+      <section id="settings-panel" class="settings-panel hidden">
+        <div class="presets">
+          <div class="preset-row">
+            <label class="preset-select-label">
+              Сохранённые проекты
+              <select id="preset-select">
+                <option value="">— не выбрано —</option>
+              </select>
+            </label>
+            <button id="delete-preset-btn" type="button" class="secondary" disabled>
+              Удалить
+            </button>
+          </div>
+          <div class="preset-row">
+            <input
+              id="preset-name"
+              type="text"
+              placeholder="Название проекта"
+              autocomplete="off"
+            />
+            <button id="save-preset-btn" type="button">Сохранить проект</button>
+          </div>
+        </div>
+
+        <section class="import-drawio">
+          <div class="preset-row">
+            <label class="preset-select-label">
+              Импорт из draw.io
+              <input id="drawio-import" type="file" accept=".drawio,.xml" />
+            </label>
+            <button id="import-btn" type="button" class="secondary" disabled>
+              Импортировать
+            </button>
+          </div>
+          <p id="import-status" class="import-status"></p>
+        </section>
+        <section class="green-filter">
+          <label class="checkbox-row">
+            <input id="green-filter-toggle" type="checkbox" />
+            <span>Подсвечивать "зеленые" техники (PT NAD)</span>
+          </label>
+          <p class="filter-note">
+            Источник списков: `pt_nad_green_techniques.txt` и
+            `pt_nad_green_subtechniques.txt`.
+          </p>
+        </section>
+      </section>
+
+      <div class="tactics-scroll-wrapper">
+        <div class="tactics-scrollbar" id="tactics-scrollbar">
+          <div class="tactics-scrollbar-inner" id="tactics-scrollbar-inner"></div>
+        </div>
+        <section id="tactics-container" class="tactics"></section>
+      </div>
+    </main>
+
+    <template id="tactic-template">
+      <details class="tactic">
+        <summary>
+          <span class="tactic-title"></span>
+          <button type="button" class="tactic-toggle" aria-label="Скрыть тактику">
+            👁
+          </button>
+        </summary>
+        <div class="techniques"></div>
+      </details>
+    </template>
+
+    <template id="technique-template">
+      <div class="technique">
+        <label class="technique-checkbox">
+          <input type="checkbox" />
+          <div class="technique-info">
+            <div class="technique-title"></div>
+            <div class="technique-name"></div>
+          </div>
+        </label>
+        <a
+          class="technique-link"
+          href="#"
+          title="Открыть описание техники"
+          target="_blank"
+          rel="noopener"
+        >
+          ↗
+        </a>
+        <button type="button" class="technique-select-all hidden">
+          Все
+        </button>
+      </div>
+    </template>
+
+    <template id="subtech-template">
+      <div class="subtechnique">
+        <label class="subtech-checkbox">
+          <input type="checkbox" />
+          <div class="subtech-body">
+            <div class="subtech-title"></div>
+            <div class="subtech-name"></div>
+          </div>
+        </label>
+        <a
+          class="subtech-link"
+          href="#"
+          title="Открыть описание подпункта"
+          target="_blank"
+          rel="noopener"
+        >
+          ↗
+        </a>
+      </div>
+    </template>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
+
