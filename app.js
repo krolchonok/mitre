@@ -76,10 +76,10 @@ const STYLES = {
     "rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fontColor=#000000;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=10;spacingTop=2;spacingBottom=2;spacingRight=2;spacingLeft=6;",
 };
 
-const FSTEC_CATEGORY_TITLES = translationData?.categories ?? {};
+const FSTEC_CATEGORY_TITLES = window.translationData?.categories ?? {};
 const FSTEC_CATEGORY_ORDER = Object.keys(FSTEC_CATEGORY_TITLES);
-const FSTEC_TECHNIQUES = Array.isArray(translationData?.techniques)
-  ? translationData.techniques.map((entry, index) => ({
+const FSTEC_TECHNIQUES = Array.isArray(window.translationData?.techniques)
+  ? window.translationData.techniques.map((entry, index) => ({
       id: entry.id || "",
       title: entry.title || "",
       fstec: Array.isArray(entry.fstec) ? entry.fstec : [],
