@@ -35,5 +35,8 @@
     previewModeMitre: document.getElementById("preview-mode-mitre"),
     previewModeFstec: document.getElementById("preview-mode-fstec"),
     previewWorkspace: document.getElementById("preview-workspace"),
+    tacticsTabbar: document.getElementById("tactics-tabbar"),
+    expandAllTacticsBtn: document.getElementById("expand-all-tactics-btn"),
+    collapseAllTacticsBtn: document.getElementById("collapse-all-tactics-btn"),
   };
 })();

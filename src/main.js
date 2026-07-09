@@ -22,6 +22,9 @@
     previewCloseBtn,
     previewModeMitre,
     previewModeFstec,
+    tacticsTabbar,
+    expandAllTacticsBtn,
+    collapseAllTacticsBtn,
   } = Mitre.dom;
   const { state } = Mitre;
   const { parseMitreCodesFromText, downloadFile } = Mitre.utils;
@@ -41,6 +44,9 @@
     syncScrollbars,
     updateScrollbars,
     handleWheelScroll,
+    collapseAllTactics,
+    expandAllTactics,
+    handleTacticsTabbarClick,
   } = Mitre.render;
   const {
     collectSelection,
@@ -175,6 +181,15 @@
     }
     tacticsContainer.addEventListener("click", handleTechniqueSelectAll);
     tacticsContainer.addEventListener("click", handleTacticToggle);
+    if (tacticsTabbar) {
+      tacticsTabbar.addEventListener("click", handleTacticsTabbarClick);
+    }
+    if (expandAllTacticsBtn) {
+      expandAllTacticsBtn.addEventListener("click", expandAllTactics);
+    }
+    if (collapseAllTacticsBtn) {
+      collapseAllTacticsBtn.addEventListener("click", collapseAllTactics);
+    }
     settingsToggleBtn.addEventListener("click", toggleSettingsPanel);
     if (textImportBtn) {
       textImportBtn.addEventListener("click", handleTextImport);

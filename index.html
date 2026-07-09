@@ -107,6 +107,18 @@
         </section>
       </section>
 
+      <div class="tactics-toolbar">
+        <div class="tactics-toolbar-actions">
+          <button id="expand-all-tactics-btn" type="button" class="secondary small">
+            Развернуть все
+          </button>
+          <button id="collapse-all-tactics-btn" type="button" class="secondary small">
+            Свернуть все
+          </button>
+        </div>
+        <nav id="tactics-tabbar" class="tactics-tabbar" aria-label="Быстрый переход по тактикам"></nav>
+      </div>
+
       <div class="tactics-scroll-wrapper">
         <div class="tactics-scrollbar" id="tactics-scrollbar">
           <div class="tactics-scrollbar-inner" id="tactics-scrollbar-inner"></div>
@@ -116,15 +128,15 @@
     </main>
 
     <template id="tactic-template">
-      <details class="tactic">
-        <summary>
+      <div class="tactic">
+        <div class="tactic-summary">
           <span class="tactic-title"></span>
           <button type="button" class="tactic-toggle" aria-label="Скрыть тактику">
             👁
           </button>
-        </summary>
+        </div>
         <div class="techniques"></div>
-      </details>
+      </div>
     </template>
 
     <template id="technique-template">

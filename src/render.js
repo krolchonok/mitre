@@ -9,6 +9,7 @@
     techniqueTemplate,
     subtechTemplate,
     greenFilterToggle,
+    tacticsTabbar,
   } = Mitre.dom;
   const { MITRE_LINK_BASE } = Mitre.config;
   const { state } = Mitre;
@@ -28,17 +29,16 @@
     tacticsContainer.innerHTML = "";
     tactics.forEach((tactic, tIndex) => {
       const fragment = tacticTemplate.content.cloneNode(true);
-      const details = fragment.querySelector("details");
-      const summary = fragment.querySelector("summary");
+      const tacticEl = fragment.querySelector(".tactic");
+      const summary = fragment.querySelector(".tactic-summary");
       const summaryTitle = summary.querySelector(".tactic-title");
       const toggleBtn = summary.querySelector(".tactic-toggle");
       summaryTitle.textContent = `${tactic.name} (${tactic.code})`;
       toggleBtn.dataset.tacticCode = tactic.code;
-      details.dataset.tacticCode = tactic.code;
+      tacticEl.dataset.tacticCode = tactic.code;
 
       const isCollapsed = state.tacticCollapseState.get(tactic.code) === true;
-      details.classList.toggle("collapsed", isCollapsed);
-      details.open = !isCollapsed;
+      tacticEl.classList.toggle("collapsed", isCollapsed);
       updateTacticToggleButton(toggleBtn, isCollapsed);
 
       const techniqueHolder = fragment.querySelector(".techniques");
@@ -126,6 +126,7 @@
 
     buildCodeIndexMap();
     updateGreenHighlights();
+    renderTacticsTabbar(tactics);
     requestAnimationFrame(updateScrollbars);
   }
 
@@ -207,23 +208,45 @@
     tacticsContainer.scrollLeft += delta;
   }
 
+  function setTacticCollapsed(tacticCard, collapsed) {
+    const code = tacticCard.dataset.tacticCode;
+    const toggleBtn = tacticCard.querySelector(".tactic-toggle");
+    tacticCard.classList.toggle("collapsed", collapsed);
+    if (collapsed) {
+      state.tacticCollapseState.set(code, true);
+    } else {
+      state.tacticCollapseState.delete(code);
+    }
+    updateTacticToggleButton(toggleBtn, collapsed);
+  }
+
   function handleTacticToggle(event) {
     const button = event.target.closest(".tactic-toggle");
     if (!button) return;
     event.preventDefault();
     const tacticCard = button.closest(".tactic");
     if (!tacticCard) return;
-    const code = button.dataset.tacticCode;
-    const collapsed = !tacticCard.classList.contains("collapsed");
-    tacticCard.classList.toggle("collapsed", collapsed);
-    tacticCard.open = !collapsed;
-    if (collapsed) {
-      state.tacticCollapseState.set(code, true);
-    } else {
-      state.tacticCollapseState.delete(code);
-    }
-    updateTacticToggleButton(button, collapsed);
+    setTacticCollapsed(tacticCard, !tacticCard.classList.contains("collapsed"));
     persistTacticState();
+    updateTacticsTabbarState();
+  }
+
+  function collapseAllTactics() {
+    tacticsContainer
+      .querySelectorAll(".tactic")
+      .forEach((tacticCard) => setTacticCollapsed(tacticCard, true));
+    persistTacticState();
+    updateTacticsTabbarState();
+    requestAnimationFrame(updateScrollbars);
+  }
+
+  function expandAllTactics() {
+    tacticsContainer
+      .querySelectorAll(".tactic")
+      .forEach((tacticCard) => setTacticCollapsed(tacticCard, false));
+    persistTacticState();
+    updateTacticsTabbarState();
+    requestAnimationFrame(updateScrollbars);
   }
 
   function updateTacticToggleButton(button, collapsed) {
@@ -239,6 +262,49 @@
     );
   }
 
+  // Quick-jump tab strip: with 14 tactic columns laid out side by side,
+  // hunting for one via horizontal scroll is the main usability complaint.
+  // These buttons mirror the tactic list and jump/expand on click.
+  function renderTacticsTabbar(tactics) {
+    if (!tacticsTabbar) return;
+    tacticsTabbar.innerHTML = "";
+    tactics.forEach((tactic) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tactics-tab";
+      btn.dataset.tacticCode = tactic.code;
+      btn.textContent = tactic.name;
+      btn.title = `${tactic.name} (${tactic.code})`;
+      tacticsTabbar.appendChild(btn);
+    });
+    updateTacticsTabbarState();
+  }
+
+  function updateTacticsTabbarState() {
+    if (!tacticsTabbar) return;
+    tacticsTabbar.querySelectorAll(".tactics-tab").forEach((btn) => {
+      const collapsed =
+        state.tacticCollapseState.get(btn.dataset.tacticCode) === true;
+      btn.classList.toggle("is-collapsed", collapsed);
+    });
+  }
+
+  function handleTacticsTabbarClick(event) {
+    const btn = event.target.closest(".tactics-tab");
+    if (!btn) return;
+    const tacticCard = tacticsContainer.querySelector(
+      `.tactic[data-tactic-code="${btn.dataset.tacticCode}"]`
+    );
+    if (!tacticCard) return;
+
+    if (tacticCard.classList.contains("collapsed")) {
+      setTacticCollapsed(tacticCard, false);
+      persistTacticState();
+      updateTacticsTabbarState();
+    }
+    tacticCard.scrollIntoView({ inline: "start", block: "nearest" });
+  }
+
   Mitre.render = {
     sortTacticsData,
     renderTactics,
@@ -249,5 +315,8 @@
     handleWheelScroll,
     handleTacticToggle,
     updateTacticToggleButton,
+    collapseAllTactics,
+    expandAllTactics,
+    handleTacticsTabbarClick,
   };
 })();

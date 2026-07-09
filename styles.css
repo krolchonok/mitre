@@ -262,12 +262,77 @@ textarea {
   color: #ff0000;
 }
 
+/* Quick-jump tab strip + bulk collapse/expand controls for the tactic board */
+.tactics-toolbar {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tactics-toolbar-actions {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+button.small {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.tactics-tabbar {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-content: flex-start;
+  background: var(--surface);
+  border: 2px solid #dfdfdf;
+  border-color: #808080 #ffffff #ffffff #808080;
+  padding: 6px;
+  box-shadow: inset 1px 1px 0px #ffffff;
+  max-height: 84px;
+  overflow-y: auto;
+}
+
+.tactics-tab {
+  font-family: "Tahoma", sans-serif;
+  border: none;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: default;
+  background: #ffffff;
+  color: #000;
+  box-shadow: inset 1px 1px 0px #ffffff,
+              inset -1px -1px 0px #000000,
+              inset 2px 2px 0px #dfdfdf,
+              inset -2px -2px 0px #808080;
+  outline: none;
+  white-space: nowrap;
+}
+
+.tactics-tab:active {
+  box-shadow: inset 1px 1px 0px #000000,
+              inset -1px -1px 0px #ffffff,
+              inset 2px 2px 0px #808080,
+              inset -2px -2px 0px #dfdfdf;
+}
+
+.tactics-tab.is-collapsed {
+  background: #dfdfdf;
+  color: #404040;
+}
+
 /* Scrollbar wrapper styling */
 .tactics-scroll-wrapper {
   border-radius: 0;
   border: none;
   padding: 0;
   background: transparent;
+  display: flex;
+  flex-direction: column;
+  height: clamp(320px, calc(100vh - 300px), 900px);
 }
 
 .tactics-scrollbar {
@@ -277,6 +342,7 @@ textarea {
   height: 16px;
   background: #dfdfdf;
   border: 1px solid #808080;
+  flex: 0 0 auto;
 }
 
 .tactics,
@@ -284,12 +350,17 @@ textarea {
   scrollbar-width: auto;
 }
 
-/* Tactics Matrix Horizontal Container */
+/* Tactics Matrix Horizontal Container: each tactic is a fixed-height board
+   column so scanning never requires scrolling the whole page vertically
+   AND horizontally at the same time. */
 .tactics {
   display: flex;
+  align-items: stretch;
   gap: 12px;
   overflow-x: auto;
   padding: 0 0 16px 0;
+  flex: 1;
+  min-height: 0;
 }
 
 .tactics::before,
@@ -309,6 +380,8 @@ textarea {
   box-shadow: inset 1px 1px 0px #ffffff;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .tactic.collapsed {
@@ -320,12 +393,8 @@ textarea {
   border-color: #ffffff #808080 #808080 #ffffff;
 }
 
-.tactic summary::-webkit-details-marker {
-  display: none;
-}
-
 /* Tactic Title/Header (Win95 Active TitleBar look) */
-.tactic summary {
+.tactic-summary {
   list-style: none;
   display: flex;
   align-items: center;
@@ -339,13 +408,11 @@ textarea {
   font-weight: bold;
   font-size: 11px;
   cursor: default;
-  position: sticky;
-  top: 0;
-  z-index: 3;
+  flex: 0 0 auto;
   margin-bottom: 6px;
 }
 
-.tactic.collapsed summary {
+.tactic.collapsed .tactic-summary {
   justify-content: center;
   background: #808080;
   padding: 4px 2px;
@@ -405,6 +472,10 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 /* Technique Cards styled as Sunken Items inside a ListView */
