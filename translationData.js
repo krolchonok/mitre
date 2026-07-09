@@ -1,5 +1,5 @@
 
-export const translationData = {
+window.translationData = {
 "categories": {
 "T1": "Сбор информации о системах и сетях",
 "T2": "Получение первоначального доступа к компонентам систем и сетей",

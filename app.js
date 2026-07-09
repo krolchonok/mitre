@@ -1,4 +1,4 @@
-import { translationData } from "./translationData.js";
+
 
 const tacticsContainer = document.getElementById("tactics-container");
 const topScrollbar = document.getElementById("tactics-scrollbar");
@@ -186,12 +186,10 @@ async function init() {
   loadTacticState();
   loadGreenFilterState();
   await loadGreenCodeLists();
-  const response = await fetch("mitre_ru.json");
-  if (!response.ok) {
-    throw new Error(`Failed to load mitre_ru.json (${response.status})`);
+  if (!window.mitreData) {
+    throw new Error("Failed to load mitreData from mitre_ru.js");
   }
-  const payload = await response.json();
-  tacticsData = payload.tactics || [];
+  tacticsData = window.mitreData.tactics || [];
   sortTacticsData(tacticsData);
   renderTactics(tacticsData);
   refreshPresetDropdown();
@@ -636,15 +634,11 @@ function loadGreenFilterState() {
 
 async function loadGreenCodeLists() {
   try {
-    const [techResponse, subResponse] = await Promise.all([
-      fetch(GREEN_TECHNIQUES_URL),
-      fetch(GREEN_SUBTECHNIQUES_URL),
-    ]);
-    if (techResponse.ok) {
-      greenTechniques = parseMitreCodesFromText(await techResponse.text());
+    if (window.greenTechniquesRaw) {
+      greenTechniques = parseMitreCodesFromText(window.greenTechniquesRaw);
     }
-    if (subResponse.ok) {
-      greenSubtechniques = parseMitreCodesFromText(await subResponse.text());
+    if (window.greenSubtechniquesRaw) {
+      greenSubtechniques = parseMitreCodesFromText(window.greenSubtechniquesRaw);
     }
   } catch (error) {
     console.warn("Не удалось загрузить списки зеленых техник", error);
