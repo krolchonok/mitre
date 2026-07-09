@@ -179,7 +179,8 @@ button.secondary {
 
 select,
 input[type="text"],
-input[type="file"] {
+input[type="file"],
+textarea {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 0.55rem 0.75rem;
@@ -188,6 +189,10 @@ input[type="file"] {
   max-width: 320px;
   background: var(--surface-muted);
   color: var(--text);
+}
+
+textarea {
+  max-width: 100%;
 }
 
 .import-status {

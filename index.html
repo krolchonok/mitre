@@ -76,6 +76,24 @@
           </div>
           <p id="import-status" class="import-status"></p>
         </section>
+
+        <section class="import-drawio text-import">
+          <div class="preset-row" style="width: 100%;">
+            <label class="preset-select-label" style="width: 100%;">
+              Быстрый импорт техник (по одной на строку)
+              <textarea id="text-import-textarea" rows="4" placeholder="T1003&#10;T1027&#10;T1003.008" style="font-family: monospace; resize: vertical; min-height: 90px; margin-top: 0.4rem;"></textarea>
+            </label>
+          </div>
+          <div class="preset-row" style="margin-top: 0.5rem; display: flex; align-items: center; width: 100%;">
+            <button id="text-import-btn" type="button">Импортировать список</button>
+            <label class="checkbox-row" style="margin-left: 1rem; cursor: pointer;">
+              <input id="text-import-clear-toggle" type="checkbox" />
+              <span>Сбросить текущий выбор</span>
+            </label>
+          </div>
+          <p id="text-import-status" class="import-status"></p>
+        </section>
+
         <section class="green-filter">
           <label class="checkbox-row">
             <input id="green-filter-toggle" type="checkbox" />

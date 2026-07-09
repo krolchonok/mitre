@@ -22,6 +22,10 @@ const importStatus = document.getElementById("import-status");
 const greenFilterToggle = document.getElementById("green-filter-toggle");
 const settingsToggleBtn = document.getElementById("settings-toggle");
 const settingsPanel = document.getElementById("settings-panel");
+const textImportTextarea = document.getElementById("text-import-textarea");
+const textImportBtn = document.getElementById("text-import-btn");
+const textImportClearToggle = document.getElementById("text-import-clear-toggle");
+const textImportStatus = document.getElementById("text-import-status");
 
 const DRAWIO_LAYOUT = {
   originX: 40,
@@ -142,6 +146,9 @@ document.addEventListener("DOMContentLoaded", () => {
   tacticsContainer.addEventListener("click", handleTechniqueSelectAll);
   tacticsContainer.addEventListener("click", handleTacticToggle);
   settingsToggleBtn.addEventListener("click", toggleSettingsPanel);
+  if (textImportBtn) {
+    textImportBtn.addEventListener("click", handleTextImport);
+  }
 
   if (topScrollbar) {
     topScrollbar.addEventListener("scroll", () =>
@@ -1381,4 +1388,90 @@ function setImportStatus(message, isError = false) {
   if (!importStatus) return;
   importStatus.textContent = message;
   importStatus.classList.toggle("error", Boolean(isError));
+}
+
+
+function handleTextImport() {
+  if (!textImportTextarea) return;
+  const text = textImportTextarea.value || "";
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+
+  if (!lines.length) {
+    setTextImportStatus("Введите хотя бы одну технику для импорта.", true);
+    return;
+  }
+
+  if (textImportClearToggle && textImportClearToggle.checked) {
+    setAllCheckboxes(false);
+  }
+
+  let selectedCount = 0;
+  const notFoundCodes = [];
+  const parsedCodes = [];
+
+  lines.forEach(line => {
+    const match = line.match(/T\d{4}(?:\.\d{3})?/i);
+    if (match) {
+      parsedCodes.push(match[0].toUpperCase());
+    }
+  });
+
+  if (!parsedCodes.length) {
+    setTextImportStatus("Не найдено корректных ID техник (например, T1003 или T1027.001).", true);
+    return;
+  }
+
+  const uniqueCodes = Array.from(new Set(parsedCodes));
+
+  uniqueCodes.forEach(code => {
+    const targets = tacticsContainer.querySelectorAll(
+      `.technique[data-code="${code}"], .subtechnique[data-code="${code}"]`
+    );
+
+    if (targets.length > 0) {
+      targets.forEach(target => {
+        const checkbox = target.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          checkbox.checked = true;
+
+          const subCard = checkbox.closest(".subtechnique");
+          if (subCard) {
+            const subtechList = subCard.closest(".subtech-list");
+            if (subtechList) {
+              const parentTechCard = subtechList.previousElementSibling;
+              if (parentTechCard && parentTechCard.classList.contains("technique")) {
+                const parentCheckbox = parentTechCard.querySelector('input[type="checkbox"]');
+                if (parentCheckbox) {
+                  parentCheckbox.checked = true;
+                }
+              }
+            }
+          }
+        }
+      });
+      selectedCount++;
+    } else {
+      notFoundCodes.push(code);
+    }
+  });
+
+  updateSelectionCounter();
+  updateGreenHighlights();
+
+  let statusMsg = `Выбрано техник/субтехник: ${selectedCount} из ${uniqueCodes.length}.`;
+  if (notFoundCodes.length > 0) {
+    statusMsg += ` Пропущено (не найдено в матрице): ${notFoundCodes.join(", ")}`;
+  }
+  
+  setTextImportStatus(statusMsg, notFoundCodes.length > 0);
+  
+  if (selectedCount > 0) {
+    textImportTextarea.value = "";
+  }
+}
+
+function setTextImportStatus(message, isWarningOrError = false) {
+  if (!textImportStatus) return;
+  textImportStatus.textContent = message;
+  textImportStatus.classList.toggle("error", isWarningOrError);
 }
