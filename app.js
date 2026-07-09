@@ -1489,3 +1489,206 @@ function setTextImportStatus(message, isWarningOrError = false) {
   textImportStatus.textContent = message;
   textImportStatus.classList.toggle("error", isWarningOrError);
 }
+
+
+let previewMode = "mitre";
+
+function togglePreviewWindow() {
+  if (!previewWindow) return;
+  const isHidden = previewWindow.style.display === "none";
+  previewWindow.style.display = isHidden ? "block" : "none";
+  if (isHidden) {
+    updatePreview();
+    previewWindow.scrollIntoView({ behavior: "smooth" });
+  }
+}
+
+function setPreviewMode(mode) {
+  previewMode = mode;
+  if (previewModeMitre && previewModeFstec) {
+    previewModeMitre.style.fontWeight = mode === "mitre" ? "bold" : "normal";
+    previewModeFstec.style.fontWeight = mode === "fstec" ? "bold" : "normal";
+  }
+  updatePreview();
+}
+
+function updatePreview() {
+  if (!previewWindow || previewWindow.style.display === "none") return;
+
+  const workspace = document.getElementById("preview-workspace");
+  if (!workspace) return;
+  workspace.innerHTML = "";
+
+  const mitreSelection = collectSelection();
+  if (!mitreSelection.length) {
+    workspace.innerHTML = '<div style="color: #fff; padding: 20px; font-weight: bold; font-family: Tahoma, sans-serif;">Выберите хотя бы одну технику для предпросмотра схемы.</div>';
+    return;
+  }
+
+  let selection = mitreSelection;
+  const isFstecMode = previewMode === "fstec";
+
+  if (isFstecMode) {
+    if (!FSTEC_TECHNIQUES.length) {
+      workspace.innerHTML = '<div style="color: #fff; padding: 20px; font-weight: bold; font-family: Tahoma, sans-serif;">Каталог соответствий ФСТЭК не загружен.</div>';
+      return;
+    }
+    const fstec = buildFstecSelectionFromSelection(mitreSelection);
+    selection = fstec.selection;
+    if (!selection.length) {
+      workspace.innerHTML = '<div style="color: #fff; padding: 20px; font-weight: bold; font-family: Tahoma, sans-serif;">По выбранным техникам нет соответствий в базе ФСТЭК.</div>';
+      return;
+    }
+  }
+
+  const layout = {
+    ...DRAWIO_LAYOUT,
+    headerHeight: isFstecMode
+      ? DRAWIO_LAYOUT.headerHeight + 40
+      : DRAWIO_LAYOUT.headerHeight,
+    techniqueBaseHeight: isFstecMode
+      ? DRAWIO_LAYOUT.techniqueBaseHeight + 30
+      : DRAWIO_LAYOUT.techniqueBaseHeight,
+    subTechniqueBaseHeight: isFstecMode
+      ? DRAWIO_LAYOUT.subTechniqueBaseHeight + 18
+      : DRAWIO_LAYOUT.subTechniqueBaseHeight,
+  };
+
+  const columnWidths = isFstecMode
+    ? computeFstecColumnWidths(selection, layout)
+    : selection.map(() => layout.columnWidth);
+
+  const normalizedColumnWidth =
+    columnWidths.length > 0 ? columnWidths[0] : layout.columnWidth;
+  const sharedHeaderHeight = isFstecMode
+    ? computeMaxFstecHeaderHeight(selection, normalizedColumnWidth, layout)
+    : layout.headerHeight;
+
+  let currentX = layout.originX;
+  let maxW = 0;
+  let maxH = 0;
+
+  selection.forEach((tactic, columnIndex) => {
+    const columnWidth = isFstecMode
+      ? normalizedColumnWidth
+      : columnWidths[columnIndex] || layout.columnWidth;
+    const isRecon = tactic.code === "TA0043";
+    const colors = isRecon ? COLOR_CONFIG.recon : COLOR_CONFIG.default;
+    const x = currentX;
+    let currentY = layout.originY;
+    const useGreen = greenFilterToggle?.checked === true;
+
+    // Tactic Header
+    const headerHeight = isFstecMode ? sharedHeaderHeight : layout.headerHeight;
+    const tacticCard = document.createElement("div");
+    tacticCard.className = "preview-card preview-tactic";
+    tacticCard.style.left = `${x}px`;
+    tacticCard.style.top = `${currentY}px`;
+    tacticCard.style.width = `${columnWidth}px`;
+    tacticCard.style.height = `${headerHeight}px`;
+    tacticCard.style.backgroundColor = colors.step;
+    tacticCard.style.border = "1px solid rgba(0, 0, 0, 0.25)";
+    
+    if (isFstecMode) {
+      tacticCard.innerHTML = '<div style="line-height: 130%; font-size: 11px;">' + tactic.name + '</div><div style="font-size: 9px; opacity: 0.85; margin-top: 4px;">' + tactic.code + '</div>';
+    } else {
+      tacticCard.innerHTML = '<div style="line-height: 110%; font-size: 12px; font-weight: bold;">' + tactic.name + ' ' + tactic.code + '</div>';
+    }
+    workspace.appendChild(tacticCard);
+
+    currentY += headerHeight + layout.verticalGap;
+
+    // Techniques
+    tactic.techniques
+      .slice()
+      .sort((a, b) => compareCodes(a.code, b.code))
+      .forEach((technique) => {
+        const techHeight = computeCardHeight(
+          technique.name,
+          layout.techniqueBaseHeight,
+          columnWidth,
+          { compact: isFstecMode }
+        );
+
+        const techniqueIsGreen =
+          useGreen && technique.code && greenTechniques.has(normalizeMitreCode(technique.code));
+        const techniqueFill = techniqueIsGreen ? GREEN_COLOR_CONFIG.card : colors.card;
+        const techniqueAccent = techniqueIsGreen ? GREEN_COLOR_CONFIG.subAccent : colors.step;
+
+        const techCard = document.createElement("div");
+        techCard.className = "preview-card preview-technique";
+        techCard.style.left = `${x}px`;
+        techCard.style.top = `${currentY}px`;
+        techCard.style.width = `${columnWidth}px`;
+        techCard.style.height = `${techHeight}px`;
+        techCard.style.backgroundColor = techniqueFill;
+        techCard.style.borderLeft = `5px solid ${techniqueAccent}`;
+        
+        if (isFstecMode) {
+          techCard.innerHTML = '<div style="font-size: 10px; font-weight: bold;">' + (technique.code || "") + '</div><div style="font-size: 9px; line-height: 1.1; margin-top: 2px;">' + technique.name + '</div>';
+        } else {
+          techCard.innerHTML = '<div style="font-size: 11px;"><b>' + technique.code + '</b></div><div style="font-size: 9px; margin-top: 2px; line-height: 1.1;">' + technique.name + '</div>';
+        }
+        workspace.appendChild(techCard);
+
+        currentY += techHeight;
+
+        // Subtechniques
+        technique.subtechniques
+          .slice()
+          .sort((a, b) => compareCodes(a.code, b.code))
+          .forEach((sub) => {
+            const subIsGreen =
+              useGreen && sub.code && greenSubtechniques.has(normalizeMitreCode(sub.code));
+            const subFill = subIsGreen ? GREEN_COLOR_CONFIG.card : colors.card;
+            const subAccent = subIsGreen ? GREEN_COLOR_CONFIG.subAccent : SUB_ACCENT_COLOR;
+            const subHeight = computeCardHeight(
+              sub.name,
+              layout.subTechniqueBaseHeight,
+              columnWidth - layout.subAccentWidth,
+              { compact: isFstecMode }
+            );
+
+            // Subtechnique card
+            const subCard = document.createElement("div");
+            subCard.className = "preview-card preview-subtech";
+            subCard.style.left = `${x + layout.subAccentWidth}px`;
+            subCard.style.top = `${currentY}px`;
+            subCard.style.width = `${columnWidth - layout.subAccentWidth}px`;
+            subCard.style.height = `${subHeight}px`;
+            subCard.style.backgroundColor = subFill;
+
+            subCard.innerHTML = '<div style="font-size: 9px;"><b>' + sub.code + '</b></div><div style="font-size: 8px; line-height: 1.1; margin-top: 1px;">' + sub.name + '</div>';
+            workspace.appendChild(subCard);
+
+            // Accent bar
+            const accentBar = document.createElement("div");
+            accentBar.className = "preview-subtech-accent";
+            accentBar.style.left = `${x}px`;
+            accentBar.style.top = `${currentY}px`;
+            accentBar.style.width = `${layout.subAccentWidth}px`;
+            accentBar.style.height = `${subHeight}px`;
+            accentBar.style.backgroundColor = subAccent;
+            workspace.appendChild(accentBar);
+
+            currentY += subHeight;
+          });
+
+        currentY += layout.verticalGap;
+      });
+
+    maxW = Math.max(maxW, x + columnWidth + 100);
+    maxH = Math.max(maxH, currentY + 100);
+    currentX += columnWidth + layout.columnGap;
+  });
+
+  // Add scroll spacer
+  const innerScroller = document.createElement("div");
+  innerScroller.style.width = `${maxW}px`;
+  innerScroller.style.height = `${maxH}px`;
+  innerScroller.style.position = "absolute";
+  innerScroller.style.left = "0";
+  innerScroller.style.top = "0";
+  innerScroller.style.pointerEvents = "none";
+  workspace.appendChild(innerScroller);
+}
