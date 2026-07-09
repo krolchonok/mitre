@@ -583,3 +583,49 @@ textarea {
   gap: 6px;
   align-items: center;
 }
+
+/* Preview styles */
+.preview-card {
+  position: absolute;
+  box-sizing: border-box;
+  font-family: Helvetica, Arial, sans-serif;
+  overflow: hidden;
+}
+
+.preview-tactic {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 4px 10px;
+  font-weight: bold;
+  box-sizing: border-box;
+}
+
+.preview-technique {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 8px;
+  font-size: 11px;
+  box-sizing: border-box;
+  color: #000000;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.preview-subtech {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 8px;
+  font-size: 10px;
+  box-sizing: border-box;
+  color: #000000;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.preview-subtech-accent {
+  position: absolute;
+  box-sizing: border-box;
+}

@@ -34,6 +34,7 @@
             FSTEC draw.io
           </button>
           <span id="selection-counter">0 техник выбрано</span>
+          <button id="preview-toggle-btn" type="button" class="secondary" style="margin-left: 10px;">Предпросмотр</button>
         </div>
         <button id="settings-toggle" type="button" class="secondary settings-toggle">
           Проекты и импорт
@@ -170,6 +171,30 @@
         </a>
       </div>
     </template>
+
+        <!-- Preview Window -->
+    <section class="win95-window" id="preview-window" style="margin: 16px 0; display: none;">
+      <div class="win95-title-bar">
+        <div class="win95-title-text">
+          <span class="win95-title-icon"></span>
+          Предпросмотр схемы Draw.io (Интерактивная карта)
+        </div>
+        <div class="win95-title-controls">
+          <button class="win95-title-btn min" aria-label="Minimize"></button>
+          <button class="win95-title-btn max" aria-label="Maximize"></button>
+          <button class="win95-title-btn close" id="preview-close-btn" aria-label="Close"></button>
+        </div>
+      </div>
+      <div class="win95-menu-bar">
+        <div class="win95-menu-item" id="preview-mode-mitre" style="font-weight: bold; cursor: pointer;">• MITRE Схема</div>
+        <div class="win95-menu-item" id="preview-mode-fstec" style="cursor: pointer; margin-left: 10px;">• FSTEC Схема</div>
+      </div>
+      <div class="win95-window-body" style="padding: 4px;">
+        <div id="preview-workspace" style="position: relative; background-color: #008080; overflow: auto; width: 100%; height: 500px; border: 2px solid #808080; box-shadow: inset 1px 1px 0px #000;">
+          <!-- Absolutely positioned divs will be drawn here -->
+        </div>
+      </div>
+    </section>
 
     <script type="module" src="app.js"></script>
   </body>

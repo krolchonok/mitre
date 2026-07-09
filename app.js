@@ -26,6 +26,11 @@ const textImportTextarea = document.getElementById("text-import-textarea");
 const textImportBtn = document.getElementById("text-import-btn");
 const textImportClearToggle = document.getElementById("text-import-clear-toggle");
 const textImportStatus = document.getElementById("text-import-status");
+const previewToggleBtn = document.getElementById("preview-toggle-btn");
+const previewWindow = document.getElementById("preview-window");
+const previewCloseBtn = document.getElementById("preview-close-btn");
+const previewModeMitre = document.getElementById("preview-mode-mitre");
+const previewModeFstec = document.getElementById("preview-mode-fstec");
 
 const DRAWIO_LAYOUT = {
   originX: 40,
@@ -148,6 +153,20 @@ document.addEventListener("DOMContentLoaded", () => {
   settingsToggleBtn.addEventListener("click", toggleSettingsPanel);
   if (textImportBtn) {
     textImportBtn.addEventListener("click", handleTextImport);
+  }
+  if (previewToggleBtn) {
+    previewToggleBtn.addEventListener("click", togglePreviewWindow);
+  }
+  if (previewCloseBtn) {
+    previewCloseBtn.addEventListener("click", () => {
+      if (previewWindow) previewWindow.style.display = "none";
+    });
+  }
+  if (previewModeMitre) {
+    previewModeMitre.addEventListener("click", () => setPreviewMode("mitre"));
+  }
+  if (previewModeFstec) {
+    previewModeFstec.addEventListener("click", () => setPreviewMode("fstec"));
   }
 
   if (topScrollbar) {
@@ -329,6 +348,7 @@ function updateSelectionCounter() {
     generateFstecBtn.disabled = totalSelected === 0;
   }
   persistCurrentSelection();
+  updatePreview();
 }
 
 function updateScrollbars() {
