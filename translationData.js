@@ -1031,5 +1031,3 @@ window.translationData = {
     }
 ]
 };
-
-export default translationData;
