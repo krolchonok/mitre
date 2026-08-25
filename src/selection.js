@@ -127,6 +127,7 @@
     if (generateFstecBtn) {
       generateFstecBtn.disabled = totalSelected === 0;
     }
+    Mitre.render.updateTechniqueCounts();
     persistCurrentSelection();
     state.emitSelectionChanged();
   }
@@ -211,6 +212,23 @@
     updateSelectionCounter();
   }
 
+  // The whole card is a hit target, not just its label — clicking anywhere on
+  // a technique/subtechnique rectangle toggles it. Clicks that land on a real
+  // control inside the card (link, chevron, "Все", the label itself) are left
+  // alone so they keep their own behaviour instead of double-toggling.
+  function handleCardClick(event) {
+    if (event.target.closest("a, button, input, label")) return;
+
+    const card = event.target.closest(".technique, .subtechnique");
+    if (!card) return;
+
+    const checkbox = card.querySelector('input[type="checkbox"]');
+    if (!checkbox) return;
+
+    checkbox.checked = !checkbox.checked;
+    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
   function handleSelectionCheckboxChange(event) {
     const target = event.target;
     if (!target.matches('input[type="checkbox"]')) return;
@@ -246,5 +264,6 @@
     applyInitialSelection,
     handleTechniqueSelectAll,
     handleSelectionCheckboxChange,
+    handleCardClick,
   };
 })();

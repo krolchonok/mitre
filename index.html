@@ -5,52 +5,112 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>MITRE → Draw.io</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="app-header">
-      <div>
-        <h1>MITRE → Draw.io</h1>
-        <p>
-          Отметьте тактики и техники, затем скачайте готовый файл draw.io для
-          диаграммы.
-        </p>
+    <div class="app-chrome">
+    <header class="site-header">
+      <div class="site-brand">
+        <span class="site-brand-mark"></span>
+        MITRE → Draw.io
       </div>
-      <div class="header-actions">
-        <button id="select-all-btn" type="button" class="secondary">
+      <div class="site-header-actions">
+        <button id="select-all-btn" type="button" class="btn btn-ghost">
           Выбрать всё
         </button>
-        <button id="clear-btn" type="button" class="secondary">Очистить</button>
+        <button id="clear-btn" type="button" class="btn btn-ghost">Очистить</button>
       </div>
     </header>
 
-    <main>
-      <section class="controls">
-        <div class="controls-left">
-          <button id="generate-btn" type="button" disabled>
-            MITRE draw.io
+    <section class="hero">
+      <h1 class="hero-title">
+        Какие техники MITRE ATT&amp;CK попадут в вашу схему
+      </h1>
+      <p class="hero-lead">
+        Отметьте тактики и техники — инструмент соберёт из них готовую схему
+        draw.io в нотации MITRE или в терминах ФСТЭК России.
+      </p>
+      <div class="hero-meta">
+        <span class="hero-stat">
+          <span class="hero-stat-dot"></span>
+          <span id="selection-counter">0 элементов выбрано</span>
+        </span>
+        <span class="hero-version">Источник: mitre.ptsecurity.com</span>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <button id="generate-btn" type="button" class="btn btn-primary" disabled>
+          MITRE draw.io
+        </button>
+        <button id="generate-fstec-btn" type="button" class="btn btn-primary" disabled>
+          FSTEC draw.io
+        </button>
+        <button id="preview-toggle-btn" type="button" class="btn">
+          Предпросмотр
+        </button>
+      </div>
+
+      <label class="switch-row">
+        <input id="subtech-toggle" type="checkbox" class="switch-input" />
+        <span class="switch" aria-hidden="true"></span>
+        <span>Подтехники</span>
+      </label>
+
+      <label class="switch-row">
+        <input id="green-filter-toggle" type="checkbox" class="switch-input" />
+        <span class="switch" aria-hidden="true"></span>
+        <span>Подсветка PT NAD</span>
+      </label>
+
+      <div class="toolbar-group toolbar-group--end">
+        <div class="legend-wrap">
+          <button id="legend-btn" type="button" class="btn" aria-expanded="false">
+            Обозначения
           </button>
-          <button id="generate-fstec-btn" type="button" class="secondary" disabled>
-            FSTEC draw.io
-          </button>
-          <span id="selection-counter">0 техник выбрано</span>
-          <button id="preview-toggle-btn" type="button" class="secondary" style="margin-left: 10px;">Предпросмотр</button>
+          <div id="legend-popover" class="legend-popover hidden">
+            <div class="legend-item">
+              <span class="legend-swatch legend-swatch--green"></span>
+              Обнаруживается PT NAD
+            </div>
+            <div class="legend-item">
+              <span class="legend-swatch legend-swatch--selected"></span>
+              Выбрано для схемы
+            </div>
+            <div class="legend-item">
+              <span class="legend-swatch legend-swatch--plain"></span>
+              Не выбрано
+            </div>
+          </div>
         </div>
-        <button id="settings-toggle" type="button" class="secondary settings-toggle">
+        <button id="settings-toggle" type="button" class="btn">
           Проекты и импорт
         </button>
-      </section>
+      </div>
+    </div>
 
+    <nav id="tactics-tabbar" class="tactics-tabbar" aria-label="Быстрый переход по тактикам"></nav>
+    </div>
+
+    <main>
       <section id="settings-panel" class="settings-panel hidden">
-        <div class="presets">
+        <div class="panel">
+          <h2 class="panel-title">Сохранённые проекты</h2>
           <div class="preset-row">
-            <label class="preset-select-label">
-              Сохранённые проекты
+            <label class="field">
+              <span class="field-label">Проект</span>
               <select id="preset-select">
                 <option value="">— не выбрано —</option>
               </select>
             </label>
-            <button id="delete-preset-btn" type="button" class="secondary" disabled>
+            <button id="delete-preset-btn" type="button" class="btn" disabled>
               Удалить
             </button>
           </div>
@@ -61,33 +121,37 @@
               placeholder="Название проекта"
               autocomplete="off"
             />
-            <button id="save-preset-btn" type="button">Сохранить проект</button>
+            <button id="save-preset-btn" type="button" class="btn btn-primary">
+              Сохранить
+            </button>
           </div>
         </div>
 
-        <section class="import-drawio">
+        <section class="panel import-drawio">
+          <h2 class="panel-title">Импорт из draw.io</h2>
           <div class="preset-row">
-            <label class="preset-select-label">
-              Импорт из draw.io
+            <label class="field">
+              <span class="field-label">Файл схемы</span>
               <input id="drawio-import" type="file" accept=".drawio,.xml" />
             </label>
-            <button id="import-btn" type="button" class="secondary" disabled>
+            <button id="import-btn" type="button" class="btn" disabled>
               Импортировать
             </button>
           </div>
           <p id="import-status" class="import-status"></p>
         </section>
 
-        <section class="import-drawio text-import">
-          <div class="preset-row" style="width: 100%;">
-            <label class="preset-select-label" style="width: 100%;">
-              Быстрый импорт техник (по одной на строку)
-              <textarea id="text-import-textarea" rows="4" placeholder="T1003&#10;T1027&#10;T1003.008" style="font-family: monospace; resize: vertical; min-height: 90px; margin-top: 0.4rem;"></textarea>
-            </label>
-          </div>
-          <div class="preset-row" style="margin-top: 0.5rem; display: flex; align-items: center; width: 100%;">
-            <button id="text-import-btn" type="button">Импортировать список</button>
-            <label class="checkbox-row" style="margin-left: 1rem; cursor: pointer;">
+        <section class="panel import-drawio text-import">
+          <h2 class="panel-title">Быстрый импорт техник</h2>
+          <label class="field field--full">
+            <span class="field-label">По одному коду на строку</span>
+            <textarea id="text-import-textarea" rows="4" placeholder="T1003&#10;T1027&#10;T1003.008"></textarea>
+          </label>
+          <div class="preset-row preset-row--tight">
+            <button id="text-import-btn" type="button" class="btn btn-primary">
+              Импортировать список
+            </button>
+            <label class="checkbox-row">
               <input id="text-import-clear-toggle" type="checkbox" />
               <span>Сбросить текущий выбор</span>
             </label>
@@ -95,34 +159,64 @@
           <p id="text-import-status" class="import-status"></p>
         </section>
 
-        <section class="green-filter">
-          <label class="checkbox-row">
-            <input id="green-filter-toggle" type="checkbox" />
-            <span>Подсвечивать "зеленые" техники (PT NAD)</span>
-          </label>
-          <p class="filter-note">
-            Источник списков: `pt_nad_green_techniques.txt` и
-            `pt_nad_green_subtechniques.txt`.
+        <section class="panel green-filter page-fit">
+          <h2 class="panel-title">Вписать схему в лист</h2>
+          <div class="preset-row">
+            <label class="field">
+              <span class="field-label">Формат</span>
+              <select id="page-fit-size">
+                <option value="none">Без подгонки</option>
+                <option value="a4">A4</option>
+                <option value="a3">A3</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Ориентация</span>
+              <select id="page-fit-orientation">
+                <option value="portrait">Книжная</option>
+                <option value="landscape">Альбомная</option>
+              </select>
+            </label>
+          </div>
+          <div class="preset-row">
+            <label class="field">
+              <span class="field-label">Раскладка тактик</span>
+              <select id="page-fit-flow">
+                <option value="auto">Авто — переносить рядами</option>
+                <option value="single">Всё в один ряд</option>
+              </select>
+            </label>
+            <label class="field field--narrow">
+              <span class="field-label">Ширина колонки, px</span>
+              <input id="page-fit-width" type="number" min="120" max="600" step="1" value="230" />
+            </label>
+            <label class="field">
+              <span class="field-label">При смене шрифта</span>
+              <select id="page-fit-width-mode">
+                <option value="auto">Ширина растёт со шрифтом</option>
+                <option value="fixed">Ширина фиксирована</option>
+              </select>
+            </label>
+          </div>
+          <div class="preset-row">
+            <input id="page-fit-width-range" type="range" min="120" max="600" step="5" value="230" />
+          </div>
+          <div class="preset-row">
+            <label class="field field--narrow">
+              <span class="field-label">Шрифт плиток, px</span>
+              <input id="page-fit-font" type="number" min="6" max="24" step="1" value="12" />
+            </label>
+            <input id="page-fit-font-range" type="range" min="6" max="24" step="1" value="12" />
+          </div>
+          <p class="filter-note" id="page-fit-hint">
+            «Авто» подбирает ширину колонок и переносит тактики рядами, чтобы
+            шрифт остался крупным. «В один ряд» сохраняет цепочку тактик слева
+            направо и ужимает схему сильнее.
           </p>
         </section>
       </section>
 
-      <div class="tactics-toolbar">
-        <div class="tactics-toolbar-actions">
-          <button id="expand-all-tactics-btn" type="button" class="secondary small">
-            Развернуть все
-          </button>
-          <button id="collapse-all-tactics-btn" type="button" class="secondary small">
-            Свернуть все
-          </button>
-        </div>
-        <nav id="tactics-tabbar" class="tactics-tabbar" aria-label="Быстрый переход по тактикам"></nav>
-      </div>
-
       <div class="tactics-scroll-wrapper">
-        <div class="tactics-scrollbar" id="tactics-scrollbar">
-          <div class="tactics-scrollbar-inner" id="tactics-scrollbar-inner"></div>
-        </div>
         <section id="tactics-container" class="tactics"></section>
       </div>
     </main>
@@ -131,9 +225,7 @@
       <div class="tactic">
         <div class="tactic-summary">
           <span class="tactic-title"></span>
-          <button type="button" class="tactic-toggle" aria-label="Скрыть тактику">
-            👁
-          </button>
+          <button type="button" class="tactic-toggle" aria-label="Скрыть тактику"></button>
         </div>
         <div class="techniques"></div>
       </div>
@@ -141,25 +233,25 @@
 
     <template id="technique-template">
       <div class="technique">
+        <div class="technique-head">
+          <span class="technique-title"></span>
+          <a
+            class="technique-link"
+            href="#"
+            title="Открыть описание техники"
+            target="_blank"
+            rel="noopener"
+          >↗</a>
+        </div>
         <label class="technique-checkbox">
           <input type="checkbox" />
-          <div class="technique-info">
-            <div class="technique-title"></div>
-            <div class="technique-name"></div>
-          </div>
+          <span class="technique-name"></span>
         </label>
-        <a
-          class="technique-link"
-          href="#"
-          title="Открыть описание техники"
-          target="_blank"
-          rel="noopener"
-        >
-          ↗
-        </a>
-        <button type="button" class="technique-select-all hidden">
-          Все
-        </button>
+        <div class="technique-foot">
+          <span class="technique-count"></span>
+          <button type="button" class="technique-select-all hidden">Все</button>
+          <button type="button" class="technique-expand hidden" aria-expanded="false" aria-label="Показать подтехники"></button>
+        </div>
       </div>
     </template>
 
@@ -167,10 +259,10 @@
       <div class="subtechnique">
         <label class="subtech-checkbox">
           <input type="checkbox" />
-          <div class="subtech-body">
-            <div class="subtech-title"></div>
-            <div class="subtech-name"></div>
-          </div>
+          <span class="subtech-body">
+            <span class="subtech-title"></span>
+            <span class="subtech-name"></span>
+          </span>
         </label>
         <a
           class="subtech-link"
@@ -178,31 +270,66 @@
           title="Открыть описание подпункта"
           target="_blank"
           rel="noopener"
-        >
-          ↗
-        </a>
+        >↗</a>
       </div>
     </template>
 
-        <!-- Preview Window -->
-    <section class="win95-window" id="preview-window" style="margin: 16px 0; display: none;">
-      <div class="win95-title-bar">
-        <div class="win95-title-text">
-          <span class="win95-title-icon"></span>
-          Предпросмотр схемы Draw.io (Интерактивная карта)
-        </div>
-        <div class="win95-title-controls">
-          <button class="win95-title-btn min" aria-label="Minimize"></button>
-          <button class="win95-title-btn max" aria-label="Maximize"></button>
-          <button class="win95-title-btn close" id="preview-close-btn" aria-label="Close"></button>
-        </div>
+    <!-- Preview Window -->
+    <section class="preview-panel" id="preview-window" style="display: none;">
+      <div class="preview-panel-header">
+        <span class="preview-panel-title">Предпросмотр схемы</span>
+        <button class="preview-panel-close" id="preview-close-btn" aria-label="Закрыть предпросмотр">✕</button>
       </div>
-      <div class="win95-menu-bar">
-        <div class="win95-menu-item" id="preview-mode-mitre" style="font-weight: bold; cursor: pointer;">• MITRE Схема</div>
-        <div class="win95-menu-item" id="preview-mode-fstec" style="cursor: pointer; margin-left: 10px;">• FSTEC Схема</div>
+      <div class="preview-mode-switch">
+        <button type="button" class="preview-mode-btn is-active" id="preview-mode-mitre">MITRE схема</button>
+        <button type="button" class="preview-mode-btn" id="preview-mode-fstec">ФСТЭК схема</button>
       </div>
-      <div class="win95-window-body" style="padding: 4px;">
-        <div id="preview-workspace" style="position: relative; background-color: #008080; overflow: auto; width: 100%; height: 500px; border: 2px solid #808080; box-shadow: inset 1px 1px 0px #000;">
+
+      <div class="preview-controls">
+        <label class="pv-field">
+          <span class="pv-label">Лист</span>
+          <select id="pv-size">
+            <option value="none">Без подгонки</option>
+            <option value="a4">A4</option>
+            <option value="a3">A3</option>
+          </select>
+        </label>
+        <label class="pv-field">
+          <span class="pv-label">Ориентация</span>
+          <select id="pv-orientation">
+            <option value="portrait">Книжная</option>
+            <option value="landscape">Альбомная</option>
+          </select>
+        </label>
+        <label class="pv-field">
+          <span class="pv-label">Раскладка</span>
+          <select id="pv-flow">
+            <option value="auto">Авто — рядами</option>
+            <option value="single">В один ряд</option>
+          </select>
+        </label>
+        <label class="pv-field pv-field--slider">
+          <span class="pv-label">Ширина колонки, px</span>
+          <input id="pv-width" type="range" min="120" max="600" step="5" value="230" />
+        </label>
+        <label class="pv-field">
+          <span class="pv-label">Точно</span>
+          <input id="pv-width-value" type="number" min="120" max="600" step="1" value="230" class="pv-number" />
+        </label>
+        <label class="pv-field pv-field--slider">
+          <span class="pv-label">Шрифт плиток, px</span>
+          <input id="pv-font" type="range" min="6" max="24" step="1" value="12" />
+        </label>
+        <label class="pv-field">
+          <span class="pv-label">Точно</span>
+          <input id="pv-font-value" type="number" min="6" max="24" step="1" value="12" class="pv-number" />
+        </label>
+        <button type="button" class="btn btn-small" id="pv-reset">Сбросить</button>
+        <div class="pv-readout" id="pv-readout"></div>
+      </div>
+
+      <div class="preview-panel-body">
+        <div id="preview-workspace" class="preview-workspace">
           <!-- Absolutely positioned divs will be drawn here -->
         </div>
       </div>
@@ -228,4 +355,3 @@
     <script src="src/main.js"></script>
   </body>
 </html>
-

@@ -14,6 +14,9 @@
     importInput,
     importBtn,
     greenFilterToggle,
+    pageFitSize,
+    pageFitOrientation,
+    pageFitFlow,
     settingsToggleBtn,
     settingsPanel,
     textImportBtn,
@@ -23,8 +26,9 @@
     previewModeMitre,
     previewModeFstec,
     tacticsTabbar,
-    expandAllTacticsBtn,
-    collapseAllTacticsBtn,
+    subtechToggle,
+    legendBtn,
+    legendPopover,
   } = Mitre.dom;
   const { state } = Mitre;
   const { parseMitreCodesFromText, downloadFile } = Mitre.utils;
@@ -35,6 +39,8 @@
     loadSettingsPanelState,
     saveSettingsPanelState,
     saveGreenFilterState,
+    loadPageFitState,
+    savePageFitState,
   } = Mitre.storage;
   const {
     renderTactics,
@@ -44,9 +50,9 @@
     syncScrollbars,
     updateScrollbars,
     handleWheelScroll,
-    collapseAllTactics,
-    expandAllTactics,
     handleTacticsTabbarClick,
+    handleTechniqueExpand,
+    setAllSubtechniquesExpanded,
   } = Mitre.render;
   const {
     collectSelection,
@@ -55,6 +61,7 @@
     applyInitialSelection,
     handleTechniqueSelectAll,
     handleSelectionCheckboxChange,
+    handleCardClick,
   } = Mitre.selection;
   const { refreshPresetDropdown, handleSavePreset, handleDeletePreset, handlePresetSelect } =
     Mitre.presets;
@@ -62,7 +69,13 @@
     Mitre.import;
   const { buildFstecSelectionFromSelection, FSTEC_TECHNIQUES } = Mitre.fstec;
   const { buildDrawioXml } = Mitre.drawioExport;
-  const { updatePreview, togglePreviewWindow, setPreviewMode } = Mitre.preview;
+  const {
+    updatePreview,
+    togglePreviewWindow,
+    setPreviewMode,
+    wirePreviewControls,
+    syncFromSettings,
+  } = Mitre.preview;
 
   function loadGreenCodeLists() {
     try {
@@ -99,6 +112,60 @@
     updateGreenHighlights();
   }
 
+  function handlePageFitChange() {
+    const next = {
+      ...getPageFitOption(),
+      columnWidth: getColumnWidth(),
+      fontSize: getFontSize(),
+      widthMode: getWidthMode(),
+    };
+    savePageFitState(next);
+    syncFromSettings(next);
+    updatePreview();
+  }
+
+  function toggleLegend() {
+    const isOpen = legendPopover.classList.toggle("hidden") === false;
+    legendBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+
+  function closeLegendOnOutsideClick(event) {
+    if (legendPopover.classList.contains("hidden")) return;
+    if (event.target.closest(".legend-wrap")) return;
+    legendPopover.classList.add("hidden");
+    legendBtn.setAttribute("aria-expanded", "false");
+  }
+
+  function getPageFitOption() {
+    return {
+      size: pageFitSize ? pageFitSize.value : "none",
+      orientation: pageFitOrientation ? pageFitOrientation.value : "portrait",
+      flow: pageFitFlow ? pageFitFlow.value : "auto",
+    };
+  }
+
+  // The width shown by the controls is the width that gets exported. All four
+  // width inputs are kept in sync, so any of them is a valid source.
+  function getColumnWidth() {
+    const source = Mitre.dom.pageFitWidth || Mitre.dom.pvWidth;
+    return source
+      ? Mitre.preview.clampWidth(source.value)
+      : Mitre.config.DRAWIO_LAYOUT.columnWidth;
+  }
+
+  function getWidthMode() {
+    return Mitre.dom.pageFitWidthMode
+      ? Mitre.dom.pageFitWidthMode.value
+      : "auto";
+  }
+
+  function getFontSize() {
+    const source = Mitre.dom.pageFitFont || Mitre.dom.pvFont;
+    return source
+      ? Mitre.preview.clampFontSize(source.value)
+      : Mitre.config.DRAWIO_LAYOUT.baseFontSize;
+  }
+
   function handleGenerate() {
     const selection = collectSelection();
     if (!selection.length) {
@@ -106,7 +173,12 @@
       return;
     }
 
-    const xml = buildDrawioXml(selection);
+    const xml = buildDrawioXml(selection, {
+      pageFit: getPageFitOption(),
+      columnWidth: getColumnWidth(),
+      fontSize: getFontSize(),
+      widthMode: getWidthMode(),
+    });
     downloadFile(`mitre-${Date.now()}.drawio`, xml);
   }
 
@@ -136,7 +208,13 @@
       alert("Следующие техники MITRE пропущены, так как нет соответствий ФСТЭК: " + missingCodes.join(", "));
     }
 
-    const xml = buildDrawioXml(selection, { mode: "fstec" });
+    const xml = buildDrawioXml(selection, {
+      mode: "fstec",
+      pageFit: getPageFitOption(),
+      columnWidth: getColumnWidth(),
+      fontSize: getFontSize(),
+      widthMode: getWidthMode(),
+    });
     downloadFile(`fstec-${Date.now()}.drawio`, xml);
   }
 
@@ -147,6 +225,12 @@
       greenFilterToggle.checked = loadGreenFilterState();
     }
     loadGreenCodeLists();
+
+    const pageFit = loadPageFitState();
+    if (pageFitSize) pageFitSize.value = pageFit.size;
+    if (pageFitOrientation) pageFitOrientation.value = pageFit.orientation;
+    if (pageFitFlow) pageFitFlow.value = pageFit.flow;
+    syncFromSettings(pageFit);
 
     if (!window.mitreData) {
       throw new Error("Failed to load mitreData from mitre_ru.js");
@@ -179,16 +263,30 @@
     if (greenFilterToggle) {
       greenFilterToggle.addEventListener("change", handleGreenFilterToggle);
     }
+    if (pageFitSize) {
+      pageFitSize.addEventListener("change", handlePageFitChange);
+    }
+    if (pageFitOrientation) {
+      pageFitOrientation.addEventListener("change", handlePageFitChange);
+    }
+    if (pageFitFlow) {
+      pageFitFlow.addEventListener("change", handlePageFitChange);
+    }
     tacticsContainer.addEventListener("click", handleTechniqueSelectAll);
     tacticsContainer.addEventListener("click", handleTacticToggle);
+    tacticsContainer.addEventListener("click", handleTechniqueExpand);
+    tacticsContainer.addEventListener("click", handleCardClick);
     if (tacticsTabbar) {
       tacticsTabbar.addEventListener("click", handleTacticsTabbarClick);
     }
-    if (expandAllTacticsBtn) {
-      expandAllTacticsBtn.addEventListener("click", expandAllTactics);
+    if (subtechToggle) {
+      subtechToggle.addEventListener("change", () =>
+        setAllSubtechniquesExpanded(subtechToggle.checked)
+      );
     }
-    if (collapseAllTacticsBtn) {
-      collapseAllTacticsBtn.addEventListener("click", collapseAllTactics);
+    if (legendBtn && legendPopover) {
+      legendBtn.addEventListener("click", toggleLegend);
+      document.addEventListener("click", closeLegendOnOutsideClick);
     }
     settingsToggleBtn.addEventListener("click", toggleSettingsPanel);
     if (textImportBtn) {
@@ -220,6 +318,7 @@
     document.addEventListener("wheel", handleWheelScroll, { passive: false });
     window.addEventListener("resize", updateScrollbars);
 
+    wirePreviewControls();
     state.onSelectionChanged(updatePreview);
   }
 

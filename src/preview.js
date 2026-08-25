@@ -7,11 +7,33 @@
     previewModeMitre,
     previewModeFstec,
     greenFilterToggle,
+    pageFitSize,
+    pageFitOrientation,
+    pageFitFlow,
+    pvSize,
+    pvOrientation,
+    pvFlow,
+    pvWidth,
+    pvWidthValue,
+    pvReset,
+    pvReadout,
+    pageFitWidth,
+    pageFitWidthRange,
+    pageFitFont,
+    pageFitFontRange,
+    pageFitWidthMode,
+    pvFont,
+    pvFontValue,
   } = Mitre.dom;
   const { state } = Mitre;
   const { computeLayout } = Mitre.layout;
+  const { DRAWIO_LAYOUT, fontScale } = Mitre.config;
   const { buildFstecSelectionFromSelection, FSTEC_TECHNIQUES } = Mitre.fstec;
   const { collectSelection } = Mitre.selection;
+  const { savePageFitState } = Mitre.storage;
+
+  const DEFAULT_WIDTH = DRAWIO_LAYOUT.columnWidth;
+  const DEFAULT_FONT = DRAWIO_LAYOUT.baseFontSize;
 
   function togglePreviewWindow() {
     if (!previewWindow) return;
@@ -19,21 +41,128 @@
     previewWindow.style.display = isHidden ? "block" : "none";
     if (isHidden) {
       updatePreview();
-      previewWindow.scrollIntoView({ behavior: "smooth" });
+      previewWindow.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }
 
   function setPreviewMode(mode) {
     state.setPreviewModeState(mode);
     if (previewModeMitre && previewModeFstec) {
-      previewModeMitre.style.fontWeight = mode === "mitre" ? "bold" : "normal";
-      previewModeFstec.style.fontWeight = mode === "fstec" ? "bold" : "normal";
+      previewModeMitre.classList.toggle("is-active", mode === "mitre");
+      previewModeFstec.classList.toggle("is-active", mode === "fstec");
     }
     updatePreview();
   }
 
   function showMessage(message) {
-    previewWorkspace.innerHTML = `<div style="color: #fff; padding: 20px; font-weight: bold; font-family: Tahoma, sans-serif;">${message}</div>`;
+    previewWorkspace.innerHTML = `<div class="preview-message">${message}</div>`;
+    if (pvReadout) pvReadout.textContent = "";
+  }
+
+  // The preview controls are the working copy of the export settings: editing
+  // them here writes straight back to the settings panel and to storage, so
+  // whatever is on screen is exactly what the export buttons will produce.
+  function currentSettings() {
+    return {
+      size: pvSize ? pvSize.value : "none",
+      orientation: pvOrientation ? pvOrientation.value : "portrait",
+      flow: pvFlow ? pvFlow.value : "auto",
+      columnWidth: pvWidth ? Number(pvWidth.value) : DEFAULT_WIDTH,
+      fontSize: pvFont ? Number(pvFont.value) : DEFAULT_FONT,
+      widthMode: pageFitWidthMode ? pageFitWidthMode.value : "auto",
+    };
+  }
+
+  function syncSettingsPanel(s) {
+    if (pageFitSize) pageFitSize.value = s.size;
+    if (pageFitOrientation) pageFitOrientation.value = s.orientation;
+    if (pageFitFlow) pageFitFlow.value = s.flow;
+    savePageFitState({
+      size: s.size,
+      orientation: s.orientation,
+      flow: s.flow,
+      columnWidth: s.columnWidth,
+      fontSize: s.fontSize,
+      widthMode: s.widthMode,
+    });
+  }
+
+  // The same width is offered by four controls (slider + number box, in the
+  // preview and in the settings panel). This is the one place that writes
+  // them, so they can never drift apart.
+  const WIDTH_INPUTS = () => [pvWidth, pvWidthValue, pageFitWidth, pageFitWidthRange];
+
+  function clampWidth(value) {
+    const min = pvWidth ? Number(pvWidth.min) : 120;
+    const max = pvWidth ? Number(pvWidth.max) : 600;
+    const n = Number(value);
+    if (!Number.isFinite(n)) return DEFAULT_WIDTH;
+    return Math.min(Math.max(Math.round(n), min), max);
+  }
+
+  function setColumnWidth(value, { silent = false } = {}) {
+    const w = clampWidth(value);
+    WIDTH_INPUTS().forEach((el) => {
+      if (el && el.value !== String(w)) el.value = String(w);
+    });
+    if (!silent) {
+      syncSettingsPanel(currentSettings());
+      updatePreview();
+    }
+    return w;
+  }
+
+  const FONT_INPUTS = () => [pvFont, pvFontValue, pageFitFont, pageFitFontRange];
+
+  function clampFontSize(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return DEFAULT_FONT;
+    return Math.min(
+      Math.max(Math.round(n), DRAWIO_LAYOUT.minFontSize),
+      DRAWIO_LAYOUT.maxFontSize
+    );
+  }
+
+  function setFontSize(value, { silent = false } = {}) {
+    const f = clampFontSize(value);
+    FONT_INPUTS().forEach((el) => {
+      if (el && el.value !== String(f)) el.value = String(f);
+    });
+    if (!silent) {
+      syncSettingsPanel(currentSettings());
+      updatePreview();
+    }
+    return f;
+  }
+
+  // Pulls values the other way: the settings panel changed, mirror it here.
+  function syncFromSettings(saved) {
+    if (!saved) return;
+    if (pvSize && saved.size) pvSize.value = saved.size;
+    if (pvOrientation && saved.orientation) pvOrientation.value = saved.orientation;
+    if (pvFlow && saved.flow) pvFlow.value = saved.flow;
+    if (pageFitWidthMode && saved.widthMode) pageFitWidthMode.value = saved.widthMode;
+    if (saved.columnWidth) setColumnWidth(saved.columnWidth, { silent: true });
+    if (saved.fontSize) setFontSize(saved.fontSize, { silent: true });
+  }
+
+  function handleControlChange() {
+    syncSettingsPanel(currentSettings());
+    updatePreview();
+  }
+
+  function handleWidthInput(event) {
+    setColumnWidth(event.target.value);
+  }
+
+  function handleFontInput(event) {
+    setFontSize(event.target.value);
+  }
+
+  function resetControls() {
+    if (pvFlow) pvFlow.value = "auto";
+    setFontSize(DEFAULT_FONT, { silent: true });
+    setColumnWidth(DEFAULT_WIDTH);
   }
 
   function updatePreview() {
@@ -63,38 +192,95 @@
       }
     }
 
+    const s = currentSettings();
     const useGreen = greenFilterToggle?.checked === true;
-    const { columns, bounds } = computeLayout(selection, {
+    const result = computeLayout(selection, {
       mode: isFstecMode ? "fstec" : "mitre",
       useGreen,
       greenTechniques: state.greenTechniques,
       greenSubtechniques: state.greenSubtechniques,
+      pageFit: { size: s.size, orientation: s.orientation, flow: s.flow },
+      columnWidth: s.columnWidth,
+      fontSize: s.fontSize,
+      widthMode: s.widthMode,
     });
 
+    const { columns, bounds, scale, perRow, pageWidth, pageHeight } = result;
+    const F = fontScale(result.fontSize, isFstecMode);
+    const showSheet = s.size !== "none";
+
+    // Canvas is the sheet when one is chosen, otherwise the diagram itself.
+    const canvasW = showSheet ? pageWidth : bounds.width;
+    const canvasH = showSheet ? pageHeight : bounds.height;
+
+    // Zoom the whole thing down so the full sheet is visible at once —
+    // that is the point of a fit preview.
+    const viewW = previewWorkspace.clientWidth - 24;
+    const viewH = previewWorkspace.clientHeight - 24;
+    const zoom = Math.min(1, viewW / canvasW, viewH / canvasH);
+
+    const stage = document.createElement("div");
+    stage.className = "preview-stage";
+    stage.style.width = `${canvasW}px`;
+    stage.style.height = `${canvasH}px`;
+    stage.style.transform = `scale(${zoom})`;
+
+    if (showSheet) stage.classList.add("is-sheet");
+
     columns.forEach((tactic) => {
-      previewWorkspace.appendChild(renderTacticCard(tactic, isFstecMode));
-
+      stage.appendChild(renderTacticCard(tactic, isFstecMode, scale, F));
       tactic.techniques.forEach((technique) => {
-        previewWorkspace.appendChild(renderTechniqueCard(technique, isFstecMode));
-
+        stage.appendChild(renderTechniqueCard(technique, isFstecMode, scale, F));
         technique.subtechniques.forEach((sub) => {
-          previewWorkspace.appendChild(renderSubtechCard(sub));
-          previewWorkspace.appendChild(renderSubtechAccent(sub));
+          stage.appendChild(renderSubtechCard(sub, scale, F));
+          stage.appendChild(renderSubtechAccent(sub));
         });
       });
     });
 
-    const spacer = document.createElement("div");
-    spacer.style.width = `${bounds.width}px`;
-    spacer.style.height = `${bounds.height}px`;
-    spacer.style.position = "absolute";
-    spacer.style.left = "0";
-    spacer.style.top = "0";
-    spacer.style.pointerEvents = "none";
-    previewWorkspace.appendChild(spacer);
+    const holder = document.createElement("div");
+    holder.className = "preview-stage-holder";
+    holder.style.width = `${canvasW * zoom}px`;
+    holder.style.height = `${canvasH * zoom}px`;
+    holder.appendChild(stage);
+    previewWorkspace.appendChild(holder);
+
+    renderReadout(s, result, zoom);
   }
 
-  function renderTacticCard(tactic, isFstecMode) {
+  function renderReadout(s, result, zoom) {
+    if (!pvReadout) return;
+    if (s.size === "none") {
+      pvReadout.className = "pv-readout";
+      pvReadout.textContent = `Без подгонки · схема ${Math.round(
+        result.bounds.width
+      )}×${Math.round(result.bounds.height)} px · просмотр ${Math.round(
+        zoom * 100
+      )}%`;
+      return;
+    }
+
+    const rows = result.perRow
+      ? Math.ceil(result.columns.length / result.perRow)
+      : 1;
+    const shape =
+      rows > 1 ? `${result.perRow} в ряд × ${rows}` : "в один ряд";
+    const pct = Math.round(result.scale * 100);
+    const fill = Math.round(
+      (result.bounds.height / result.pageHeight) * 100
+    );
+
+    pvReadout.className = "pv-readout";
+    if (result.scale < 0.35) pvReadout.classList.add("is-tight");
+    else if (result.scale >= 0.999) pvReadout.classList.add("is-good");
+
+    pvReadout.textContent =
+      `Масштаб ${pct}% · ${shape} · заполнение по высоте ${fill}%` +
+      (result.scale < 0.35 ? " · текст будет нечитаем при печати" : "");
+  }
+
+  function renderTacticCard(tactic, isFstecMode, scale = 1, F) {
+    const fs = (px) => Math.max(1, px * scale);
     const card = document.createElement("div");
     card.className = "preview-card preview-tactic";
     card.style.left = `${tactic.x}px`;
@@ -102,16 +288,16 @@
     card.style.width = `${tactic.width}px`;
     card.style.height = `${tactic.height}px`;
     card.style.backgroundColor = tactic.fillColor;
-    card.style.border = "1px solid rgba(0, 0, 0, 0.25)";
 
     card.innerHTML = isFstecMode
-      ? `<div style="line-height: 130%; font-size: 11px;">${tactic.name}</div><div style="font-size: 9px; opacity: 0.85; margin-top: 4px;">${tactic.code}</div>`
-      : `<div style="line-height: 110%; font-size: 12px; font-weight: bold;">${tactic.name} ${tactic.code}</div>`;
+      ? `<div style="line-height: 130%; font-size: ${fs(F.tacticName)}px;">${tactic.name}</div><div style="font-size: ${fs(F.tacticCode)}px; opacity: 0.85; margin-top: 4px;">${tactic.code}</div>`
+      : `<div style="line-height: 110%; font-size: ${fs(F.tacticName)}px; font-weight: bold;">${tactic.name} ${tactic.code}</div>`;
 
     return card;
   }
 
-  function renderTechniqueCard(technique, isFstecMode) {
+  function renderTechniqueCard(technique, isFstecMode, scale = 1, F) {
+    const fs = (px) => Math.max(1, px * scale);
     const card = document.createElement("div");
     card.className = "preview-card preview-technique";
     card.style.left = `${technique.x}px`;
@@ -119,16 +305,16 @@
     card.style.width = `${technique.width}px`;
     card.style.height = `${technique.height}px`;
     card.style.backgroundColor = technique.fill;
-    card.style.borderLeft = `5px solid ${technique.accent}`;
 
     card.innerHTML = isFstecMode
-      ? `<div style="font-size: 10px; font-weight: bold;">${technique.code || ""}</div><div style="font-size: 9px; line-height: 1.1; margin-top: 2px;">${technique.name}</div>`
-      : `<div style="font-size: 11px;"><b>${technique.code}</b></div><div style="font-size: 9px; margin-top: 2px; line-height: 1.1;">${technique.name}</div>`;
+      ? `<div style="font-size: ${fs(F.techniqueCode)}px; font-weight: bold;">${technique.code || ""}</div><div style="font-size: ${fs(F.techniqueName)}px; line-height: 1.15; margin-top: 2px;">${technique.name}</div>`
+      : `<div style="font-size: ${fs(F.techniqueCode)}px;"><b>${technique.code}</b></div><div style="font-size: ${fs(F.techniqueName)}px; margin-top: 2px; line-height: 1.15;">${technique.name}</div>`;
 
     return card;
   }
 
-  function renderSubtechCard(sub) {
+  function renderSubtechCard(sub, scale = 1, F) {
+    const fs = (px) => Math.max(1, px * scale);
     const card = document.createElement("div");
     card.className = "preview-card preview-subtech";
     card.style.left = `${sub.x}px`;
@@ -136,7 +322,7 @@
     card.style.width = `${sub.width}px`;
     card.style.height = `${sub.height}px`;
     card.style.backgroundColor = sub.fill;
-    card.innerHTML = `<div style="font-size: 9px;"><b>${sub.code}</b></div><div style="font-size: 8px; line-height: 1.1; margin-top: 1px;">${sub.name}</div>`;
+    card.innerHTML = `<div style="font-size: ${fs(F.subCode)}px;"><b>${sub.code}</b></div><div style="font-size: ${fs(F.subName)}px; line-height: 1.15; margin-top: 1px;">${sub.name}</div>`;
     return card;
   }
 
@@ -151,5 +337,28 @@
     return bar;
   }
 
-  Mitre.preview = { togglePreviewWindow, setPreviewMode, updatePreview };
+  function wirePreviewControls() {
+    [pvSize, pvOrientation, pvFlow, pageFitWidthMode].forEach((el) => {
+      if (el) el.addEventListener("change", handleControlChange);
+    });
+    // input, not change: the diagram must move while a slider is dragged.
+    [pvWidth, pvWidthValue, pageFitWidth, pageFitWidthRange].forEach((el) => {
+      if (el) el.addEventListener("input", handleWidthInput);
+    });
+    [pvFont, pvFontValue, pageFitFont, pageFitFontRange].forEach((el) => {
+      if (el) el.addEventListener("input", handleFontInput);
+    });
+    if (pvReset) pvReset.addEventListener("click", resetControls);
+    window.addEventListener("resize", updatePreview);
+  }
+
+  Mitre.preview = {
+    togglePreviewWindow,
+    setPreviewMode,
+    updatePreview,
+    wirePreviewControls,
+    syncFromSettings,
+    clampWidth,
+    clampFontSize,
+  };
 })();

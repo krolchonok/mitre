@@ -1,16 +1,38 @@
-/* Windows 95 / Windows 2000 Retro Style for MITRE to Draw.io */
+/* MITRE ATT&CK → Draw.io
+   Structure and visual language follow the PT Security ATT&CK matrix
+   (mitre.ptsecurity.com): white page, sticky filter bar of pill controls,
+   grey rounded column headers, flat square technique cards carrying an
+   ID / name / count-badge + chevron, and subtechniques that expand inline.
+
+   Semantics kept from this tool: green = PT NAD can detect the technique
+   (the same "covered" meaning the reference gives green), red = the export
+   accent and the selected state, since selection is what this tool acts on. */
 
 :root {
-  --bg: #008080; /* Windows 95 Teal desktop */
-  --surface: #c0c0c0; /* Standard Win95 gray */
-  --surface-muted: #c0c0c0;
-  --border: #808080;
-  --text: #000000;
-  --muted: #404040;
-  --accent: #000080;
-  --accent-strong: #000080;
-  --shadow: none;
-  font-family: "Tahoma", "Arial", sans-serif;
+  --page: #ffffff;
+  --ui: #f3f4f5;          /* control + column-header fill, from reference */
+  --ui-hover: #e9ebed;
+  --line: #e5e7eb;
+  --line-strong: #d7dbe1;
+
+  --text: #1b1b1b;
+  --text-secondary: #808080;
+  --text-muted: rgba(0, 0, 0, 0.4);
+
+  --red: #e0342a;
+  --red-hover: #c22a21;
+  --red-tint: #fdecea;
+
+  --green: #1e8e3e;
+  --green-fill: #d6f4de;  /* reference "full coverage" green */
+  --green-line: #b6e3c3;
+
+  --radius: 8px;
+  --radius-sm: 4px;
+
+  --col-width: 244px;
+
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
   line-height: 1.4;
   color: var(--text);
 }
@@ -21,641 +43,1166 @@
   box-sizing: border-box;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+*::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+  background-clip: padding-box;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--bg);
+  background: var(--page);
   color: var(--text);
-  padding: 16px;
-  font-size: 12px;
-}
-
-/* App Header Styled as a Win95 Application Window */
-.app-header {
-  background: var(--surface);
-  padding: 3px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: inset 1px 1px 0px #ffffff, 
-              inset -1px -1px 0px #000000, 
-              inset 2px 2px 0px #dfdfdf, 
-              inset -2px -2px 0px #808080;
-  width: 100%;
-  margin: 0 0 16px 0;
-}
-
-/* The blue bar inside the header */
-.app-header > div:first-child {
-  background: linear-gradient(90deg, #000080, #1084d0); /* Titlebar gradient */
-  color: #ffffff;
-  padding: 4px 8px;
-  font-weight: bold;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.app-header h1 {
-  margin: 0;
   font-size: 14px;
-  font-weight: bold;
-  letter-spacing: 0.5px;
 }
 
-.app-header p {
-  margin: 0;
-  font-size: 11px;
-  color: #dfdfdf;
-  font-weight: normal;
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
 }
 
-.header-actions {
-  display: flex;
-  gap: 6px;
-  padding: 6px;
-  background-color: var(--surface);
+/* ---------------------------------------------------------------- */
+/* Site header                                                       */
+/* ---------------------------------------------------------------- */
+
+/* Header, toolbar and the tactic strip travel together as one sticky block,
+   so no element needs a hardcoded top offset — the toolbar's height changes
+   when it wraps, and any fixed number would be wrong at some width. */
+.app-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--page);
 }
 
-main {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* Dialog Frame / Panel styling */
-.controls {
-  background: var(--surface);
-  border-radius: 0;
-  padding: 8px 12px;
+.site-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  box-shadow: inset 1px 1px 0px #ffffff, 
-              inset -1px -1px 0px #000000, 
-              inset 2px 2px 0px #dfdfdf, 
-              inset -2px -2px 0px #808080;
+  gap: 16px;
+  padding: 14px 32px;
+  background: var(--page);
+  border-bottom: 1px solid var(--line);
 }
 
-.controls-left {
+.site-brand {
   display: flex;
   align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.site-brand-mark {
+  width: 10px;
+  height: 10px;
+  background: var(--red);
+  flex: 0 0 auto;
+}
+
+.site-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------- */
+/* Hero                                                              */
+/* ---------------------------------------------------------------- */
+
+.hero {
+  padding: 44px 32px 32px;
+  max-width: 900px;
+}
+
+.hero-title {
+  margin: 0 0 16px;
+  font-size: 40px;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.hero-lead {
+  margin: 0 0 24px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 60ch;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 24px;
   flex-wrap: wrap;
+}
+
+.hero-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.hero-stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.hero-version {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ---------------------------------------------------------------- */
+/* Buttons & controls                                                */
+/* ---------------------------------------------------------------- */
+
+.btn,
+button {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--ui);
+  border-radius: var(--radius-sm);
+  background: var(--ui);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled),
+button:hover:not(:disabled) {
+  background: var(--ui-hover);
+}
+
+.btn:disabled,
+button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--red);
+  border-color: var(--red);
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--red-hover);
+  border-color: var(--red-hover);
+}
+
+.btn-primary:disabled {
+  background: var(--ui);
+  border-color: var(--ui);
+  color: var(--text-muted);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--ui);
+  color: var(--text);
+}
+
+/* Toggle switch, mirroring the reference's pill switches */
+.switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.switch-row:hover {
+  color: var(--text);
+}
+
+.switch-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch {
+  position: relative;
+  width: 38px;
+  min-width: 38px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--line-strong);
+  transition: background 140ms ease;
+  flex: 0 0 auto;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 140ms ease;
+}
+
+.switch-input:checked + .switch {
+  background: var(--red);
+}
+
+.switch-input:checked + .switch::after {
+  transform: translateX(14px);
+}
+
+.switch-input:focus-visible + .switch {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- */
+/* Sticky toolbar                                                    */
+/* ---------------------------------------------------------------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 32px;
+  background: var(--page);
+  border-top: 1px solid var(--line);
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-group--end {
+  margin-left: auto;
+}
+
+/* Legend popover */
+.legend-wrap {
+  position: relative;
+}
+
+.legend-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 60;
+  min-width: 240px;
+  padding: 12px;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
-/* Classic Win95 Buttons */
-button {
-  font-family: "Tahoma", sans-serif;
-  border: none;
-  border-radius: 0;
-  padding: 4px 14px;
-  font-size: 12px;
-  font-weight: normal;
-  cursor: default;
-  background: var(--surface);
-  color: #000;
-  box-shadow: inset 1px 1px 0px #ffffff, 
-              inset -1px -1px 0px #000000, 
-              inset 2px 2px 0px #dfdfdf, 
-              inset -2px -2px 0px #808080;
-  outline: 1px dotted #000000;
-  outline-offset: -4px;
-  transition: none;
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text);
 }
 
-button:not(:focus) {
-  outline: none;
+.legend-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
 }
 
-button:hover:not(:disabled) {
-  background: var(--surface);
+.legend-swatch--green {
+  background: var(--green-fill);
+  border-color: var(--green-line);
 }
 
-button:active:not(:disabled) {
-  box-shadow: inset 1px 1px 0px #000000, 
-              inset -1px -1px 0px #ffffff, 
-              inset 2px 2px 0px #808080, 
-              inset -2px -2px 0px #dfdfdf;
-  padding: 5px 13px 3px 15px;
+.legend-swatch--selected {
+  background: var(--page);
+  border-left: 3px solid var(--red);
 }
 
-button:disabled {
-  color: #808080;
-  text-shadow: 1px 1px 0px #ffffff;
-  box-shadow: inset 1px 1px 0px #ffffff, 
-              inset -1px -1px 0px #000000, 
-              inset 2px 2px 0px #dfdfdf, 
-              inset -2px -2px 0px #808080;
-  cursor: default;
+.legend-swatch--plain {
+  background: var(--page);
 }
 
-button.secondary {
-  background: var(--surface);
-  color: #000;
+/* ---------------------------------------------------------------- */
+/* Settings panel                                                    */
+/* ---------------------------------------------------------------- */
+
+main {
+  padding: 0 0 40px;
 }
 
-.settings-toggle {
-  min-width: 150px;
-}
-
-#selection-counter {
-  color: #000000;
-  font-weight: bold;
-  font-size: 11px;
-}
-
-/* Settings Panels as GroupBoxes */
 .settings-panel {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 12px;
-  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 20px 32px;
+  background: #fafafa;
+  border-bottom: 1px solid var(--line);
 }
 
 .settings-panel.hidden {
   display: none !important;
 }
 
-.presets,
-.import-drawio,
-.green-filter {
-  background: var(--surface);
-  border: 2px solid #dfdfdf;
-  border-color: #808080 #ffffff #ffffff #808080;
-  border-radius: 0;
-  padding: 12px;
-  box-shadow: inset 1px 1px 0px #ffffff;
-  position: relative;
+.panel {
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.panel-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .preset-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .preset-row:last-child {
   margin-bottom: 0;
 }
 
-.preset-select-label {
+.preset-row--tight {
+  margin-top: 10px;
+  align-items: center;
+}
+
+.field {
   display: flex;
   flex-direction: column;
-  font-size: 11px;
-  gap: 4px;
-  color: #000000;
-  font-weight: bold;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.field--full {
+  width: 100%;
+}
+
+.field-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+select,
+input[type="text"],
+input[type="number"],
+input[type="file"],
+textarea {
+  font-family: inherit;
+  font-size: 14px;
+  height: 40px;
+  padding: 0 12px;
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--page);
+  color: var(--text);
+}
+
+select:focus,
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus {
+  border-color: var(--red);
+  outline: none;
+}
+
+textarea {
+  height: auto;
+  min-height: 92px;
+  padding: 10px 12px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+
+input[type="file"] {
+  padding: 8px 12px;
+  font-size: 13px;
 }
 
 .checkbox-row {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #000;
-  cursor: default;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 3px;
+  background: var(--page);
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  background: #ffffff;
+  transform: scale(0);
+  transition: transform 100ms ease;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+input[type="checkbox"]:checked::before {
+  transform: scale(1);
 }
 
 .filter-note {
-  margin: 6px 0 0;
-  font-size: 11px;
-  color: #404040;
-}
-
-/* Win95 Inputs & Selects */
-select,
-input[type="text"],
-input[type="file"],
-textarea {
-  border: 2px solid #000000;
-  border-color: #808080 #ffffff #ffffff #808080;
-  border-radius: 0;
-  padding: 4px;
+  margin: 10px 0 0;
   font-size: 12px;
-  width: 100%;
-  max-width: 320px;
-  background: #ffffff;
-  color: #000;
-  box-shadow: inset 1px 1px 0px #000000, 
-              inset -1px -1px 0px #dfdfdf;
-}
-
-textarea {
-  max-width: 100%;
-  font-family: "Courier New", monospace;
+  color: var(--text-secondary);
+  line-height: 1.45;
 }
 
 .import-status {
-  margin: 4px 0 0;
-  font-size: 11px;
-  color: #000080;
-  font-weight: bold;
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--green);
 }
 
 .import-status.error {
-  color: #ff0000;
+  color: var(--red);
 }
 
-/* Quick-jump tab strip + bulk collapse/expand controls for the tactic board */
-.tactics-toolbar {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 10px;
+.error {
+  margin: 20px 32px;
+  padding: 12px 14px;
+  background: var(--red-tint);
+  border: 1px solid var(--red);
+  border-radius: var(--radius);
+  color: var(--red-hover);
 }
 
-.tactics-toolbar-actions {
-  display: flex;
-  gap: 6px;
-  flex: 0 0 auto;
-}
+/* ---------------------------------------------------------------- */
+/* Tactic quick-jump strip                                           */
+/* ---------------------------------------------------------------- */
 
-button.small {
-  padding: 3px 8px;
-  font-size: 11px;
-}
-
+/* One scrollable row rather than a wrapping block: it keeps the sticky
+   chrome short, and the strip stays reachable however far down the
+   (very tall) matrix you have scrolled. */
 .tactics-tabbar {
-  flex: 1;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-content: flex-start;
-  background: var(--surface);
-  border: 2px solid #dfdfdf;
-  border-color: #808080 #ffffff #ffffff #808080;
-  padding: 6px;
-  box-shadow: inset 1px 1px 0px #ffffff;
-  max-height: 84px;
-  overflow-y: auto;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 10px 32px;
+  overflow-x: auto;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: none;
+}
+
+.tactics-tabbar::-webkit-scrollbar {
+  display: none;
 }
 
 .tactics-tab {
-  font-family: "Tahoma", sans-serif;
-  border: none;
-  padding: 3px 8px;
-  font-size: 11px;
-  cursor: default;
-  background: #ffffff;
-  color: #000;
-  box-shadow: inset 1px 1px 0px #ffffff,
-              inset -1px -1px 0px #000000,
-              inset 2px 2px 0px #dfdfdf,
-              inset -2px -2px 0px #808080;
-  outline: none;
-  white-space: nowrap;
+  flex: 0 0 auto;
+  height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+  border-radius: 999px;
+  background: var(--ui);
+  border: 1px solid var(--ui);
+  color: var(--text-secondary);
 }
 
-.tactics-tab:active {
-  box-shadow: inset 1px 1px 0px #000000,
-              inset -1px -1px 0px #ffffff,
-              inset 2px 2px 0px #808080,
-              inset -2px -2px 0px #dfdfdf;
+.tactics-tab:hover {
+  background: var(--ui-hover);
+  color: var(--text);
+}
+
+.tactics-tab.is-active {
+  background: var(--text);
+  border-color: var(--text);
+  color: #ffffff;
 }
 
 .tactics-tab.is-collapsed {
-  background: #dfdfdf;
-  color: #404040;
-}
-
-/* Scrollbar wrapper styling */
-.tactics-scroll-wrapper {
-  border-radius: 0;
-  border: none;
-  padding: 0;
   background: transparent;
-  display: flex;
-  flex-direction: column;
-  height: clamp(320px, calc(100vh - 300px), 900px);
+  border-color: var(--line-strong);
+  border-style: dashed;
+  color: var(--text-muted);
 }
 
-.tactics-scrollbar {
-  overflow-x: auto;
-  margin: 0;
-  padding: 0;
-  height: 16px;
-  background: #dfdfdf;
-  border: 1px solid #808080;
-  flex: 0 0 auto;
+.tactics-tab.is-collapsed.is-active {
+  background: var(--text);
+  border-color: var(--text);
+  color: #ffffff;
 }
 
-.tactics,
-.tactics-scrollbar {
-  scrollbar-width: auto;
+/* ---------------------------------------------------------------- */
+/* Matrix                                                            */
+/* ---------------------------------------------------------------- */
+
+.tactics-scroll-wrapper {
+  padding: 16px 0 0;
 }
 
-/* Tactics Matrix Horizontal Container: each tactic is a fixed-height board
-   column so scanning never requires scrolling the whole page vertically
-   AND horizontally at the same time. */
 .tactics {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 12px;
   overflow-x: auto;
-  padding: 0 0 16px 0;
-  flex: 1;
-  min-height: 0;
+  padding: 0 32px 20px;
 }
 
-.tactics::before,
-.tactics::after {
-  content: "";
-  flex: 0 0 10vw;
-}
-
-/* Tactic Frame styled as nested Win95 Sub-Windows */
 .tactic {
-  flex: 0 0 310px;
-  border-radius: 0;
-  border: 2px solid #dfdfdf;
-  border-color: #ffffff #808080 #808080 #ffffff;
-  padding: 4px;
-  background: #dfdfdf;
-  box-shadow: inset 1px 1px 0px #ffffff;
+  flex: 0 0 var(--col-width);
+  width: var(--col-width);
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
+  gap: 8px;
+  transition: flex-basis 140ms ease, width 140ms ease;
 }
 
 .tactic.collapsed {
-  flex: 0 0 36px;
-  min-width: 36px;
-  max-width: 36px;
-  padding: 2px;
-  background: var(--surface);
-  border-color: #ffffff #808080 #808080 #ffffff;
+  flex: 0 0 44px;
+  width: 44px;
 }
 
-/* Tactic Title/Header (Win95 Active TitleBar look) */
+/* Column header: plain label on the reference's grey rounded plate */
 .tactic-summary {
-  list-style: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
-  background: #000080; /* Navy blue */
-  color: #ffffff;
-  border: none;
-  border-radius: 0;
-  padding: 3px 6px;
-  font-weight: bold;
-  font-size: 11px;
-  cursor: default;
-  flex: 0 0 auto;
+  gap: 8px;
+  padding: 10px;
+  background: var(--ui);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  min-height: 38px;
+}
+
+/* Collapsed columns are a fixed, equal height so the strip reads as one row
+   of tabs. The chevron is pulled to the top (order, not DOM order, so the
+   heading still precedes its control for assistive tech) which keeps every
+   arrow on the same line however long the tactic name is. */
+.tactic.collapsed .tactic-summary {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  height: 300px;
+  padding: 8px 6px;
+  overflow: hidden;
+}
+
+.tactic.collapsed .tactic-toggle {
+  order: -1;
   margin-bottom: 6px;
 }
 
-.tactic.collapsed .tactic-summary {
-  justify-content: center;
-  background: #808080;
-  padding: 4px 2px;
-}
-
 .tactic-title {
-  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Vertical, reading top-to-bottom: that direction clips at the end of the
+   string, so a too-long name loses its tail to an ellipsis instead of its
+   first word. The full name stays available via the title attribute. */
 .tactic.collapsed .tactic-title {
-  display: none;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-top: 0;
 }
 
-/* Tactic collapse button */
-.tactic-toggle {
-  width: 14px;
-  height: 14px;
-  border-radius: 0;
+/* Chevron toggles, drawn in CSS so no icon font is needed */
+.tactic-toggle,
+.technique-expand {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  padding: 0;
   border: none;
-  background: #c0c0c0;
+  background: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: default;
-  font-size: 8px;
-  font-weight: bold;
-  color: #000000;
-  box-shadow: inset 1px 1px 0px #ffffff, 
-              inset -1px -1px 0px #000000, 
-              inset 2px 2px 0px #dfdfdf, 
-              inset -2px -2px 0px #808080;
-  padding: 0;
-  outline: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
 }
 
-.tactic-toggle:active {
-  box-shadow: inset 1px 1px 0px #000000, 
-              inset -1px -1px 0px #ffffff, 
-              inset 2px 2px 0px #808080, 
-              inset -2px -2px 0px #dfdfdf;
-  padding-top: 1px;
-  padding-left: 1px;
+.tactic-toggle:hover,
+.technique-expand:hover {
+  background: rgba(0, 0, 0, 0.06);
 }
 
-.tactic.collapsed .tactic-toggle {
-  background: #c0c0c0;
+.tactic-toggle::before,
+.technique-expand::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 1.6px solid var(--text);
+  border-bottom: 1.6px solid var(--text);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 140ms ease;
 }
 
-.tactic.collapsed .techniques {
-  display: none;
+.tactic-toggle[aria-expanded="false"]::before {
+  transform: rotate(-45deg) translate(-2px, 2px);
+}
+
+.technique-expand[aria-expanded="true"]::before {
+  transform: rotate(-135deg) translate(-3px, -3px);
 }
 
 .techniques {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
 }
 
-/* Technique Cards styled as Sunken Items inside a ListView */
-.technique,
-.subtechnique {
-  display: grid;
-  gap: 6px;
-  padding: 6px 8px;
-  border: 2px solid #000000;
-  border-color: #808080 #ffffff #ffffff #808080;
-  background-color: #ffffff;
-  box-shadow: inset 1px 1px 0px #000000, 
-              inset -1px -1px 0px #dfdfdf;
+.tactic.collapsed .techniques {
+  display: none;
 }
 
+/* ---------------------------------------------------------------- */
+/* Technique cards                                                   */
+/* ---------------------------------------------------------------- */
+
+.technique-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Flat, square, 10px padding — the reference card geometry exactly. */
 .technique {
-  background: #b1ddf0; /* Default light blue */
-  margin-bottom: 2px;
-  grid-template-columns: 1fr auto auto;
+  padding: 10px;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.technique:hover {
+  background: #fafafa;
+}
+
+.technique.green-mark {
+  background: var(--green-fill);
+  border-color: var(--green-line);
+  border-left-color: var(--green-line);
+}
+
+.technique:has(> .technique-checkbox input:checked) {
+  border-left-color: var(--red);
+}
+
+.technique-head {
+  display: flex;
   align-items: center;
-  position: relative;
-  color: #000000;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 19px;
+  margin-bottom: 2px;
+}
+
+.technique-title {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.28px;
 }
 
 .technique-checkbox {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 6px;
+  gap: 8px;
+  align-items: start;
+  cursor: pointer;
+}
+
+.technique-name {
+  font-size: 14px;
+  letter-spacing: -0.28px;
+  line-height: 1.25;
+}
+
+.technique-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+/* Count badge: selected subtechniques over total — the reference's
+   coverage badge, repurposed for what this tool exports. */
+.technique-count {
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-muted);
+  min-height: 20px;
+  display: inline-flex;
   align-items: center;
 }
 
-.technique-info .technique-title {
-  font-weight: bold;
+.technique-count:empty {
+  display: none;
 }
 
-.technique-info .technique-name,
-.subtech-name {
-  color: #333333;
-  font-size: 11px;
+.technique-count.is-filled {
+  background: var(--red-tint);
+  color: var(--red-hover);
 }
 
-.technique input[type="checkbox"],
-.subtechnique input[type="checkbox"] {
-  margin: 0;
-  cursor: default;
-}
-
-/* Color codes representation with Win95 bevels */
-.technique::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: #10739e;
-}
-
-.technique.green-mark {
-  background: #bfe8b8; /* Green highlighting */
-}
-
-.technique.green-mark::before {
-  background: #2d8a45;
-}
-
-/* Sub-buttons inside techniques */
 .technique-select-all {
-  padding: 1px 4px;
-  font-size: 10px;
-  border-radius: 0;
-  background: #c0c0c0;
-  color: #000000;
-  box-shadow: inset 1px 1px 0px #ffffff, 
-              inset -1px -1px 0px #000000, 
-              inset 2px 2px 0px #dfdfdf, 
-              inset -2px -2px 0px #808080;
-  visibility: hidden;
-  outline: none;
+  height: 22px;
+  padding: 0 8px;
+  margin-left: auto;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 120ms ease;
 }
 
 .technique:hover .technique-select-all,
-.technique .technique-select-all:not(.hidden) {
-  visibility: visible;
+.technique-select-all:focus-visible {
+  opacity: 1;
 }
 
-.subtech-title {
-  font-weight: bold;
-  font-size: 11px;
+.technique-expand {
+  margin-left: auto;
 }
 
-.error {
-  padding: 6px;
-  background: #ffffe0;
-  border: 1px solid #808080;
-  color: #ff0000;
-  font-weight: bold;
+.technique-select-all:not(.hidden) ~ .technique-expand {
+  margin-left: 0;
 }
+
+.technique-link,
+.subtech-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.technique-link:hover,
+.subtech-link:hover {
+  color: var(--red);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ---------------------------------------------------------------- */
+/* Subtechniques — inline accordion under their technique             */
+/* ---------------------------------------------------------------- */
 
 .subtech-list {
-  margin-left: 12px;
-  display: flex;
+  display: none;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  padding: 4px 0 4px 12px;
+  background: #fbfbfc;
+  border: 1px solid var(--line);
+  border-top: none;
+}
+
+.technique-group.is-expanded .subtech-list {
+  display: flex;
 }
 
 .subtechnique {
-  background: #fbded8; /* Default subtechnique red */
-  margin-bottom: 2px;
-  position: relative;
-  color: #000000;
-  grid-template-columns: 1fr auto;
+  display: flex;
   align-items: center;
+  gap: 6px;
+  padding: 7px 8px 7px 0;
+  cursor: pointer;
+  transition: background 120ms ease;
 }
 
-.subtechnique::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: #6c5e5c;
+.subtechnique:hover {
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .subtechnique.green-mark {
-  background: #d5f2ce;
+  background: var(--green-fill);
 }
 
-.subtechnique.green-mark::before {
-  background: #4fb86a;
+.subtech-checkbox {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.subtech-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.subtech-title {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.26px;
+}
+
+.subtech-name {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.25;
 }
 
 .hidden {
   display: none !important;
 }
 
-/* Link elements */
-.technique-link,
-.subtech-link {
-  display: inline-flex;
+/* ---------------------------------------------------------------- */
+/* Preview panel                                                     */
+/* ---------------------------------------------------------------- */
+
+.preview-panel {
+  margin: 0 32px 32px;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  /* Keeps scrollIntoView from parking the panel under the sticky chrome. */
+  scroll-margin-top: 200px;
+}
+
+.preview-panel-header {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 16px;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--ui);
+  border-bottom: 1px solid var(--line);
+}
+
+.preview-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.preview-panel-close {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.preview-panel-close:hover {
+  color: var(--red);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.preview-mode-switch {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.preview-mode-btn {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  border-radius: 999px;
+  background: var(--ui);
+  border-color: var(--ui);
+  color: var(--text-secondary);
+}
+
+.preview-mode-btn.is-active {
+  background: var(--red);
+  border-color: var(--red);
+  color: #ffffff;
+}
+
+/* Live fit controls */
+.preview-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: #fafafa;
+  border-bottom: 1px solid var(--line);
+}
+
+.pv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pv-field--slider {
+  min-width: 240px;
+  flex: 1 1 240px;
+}
+
+.pv-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.pv-field select {
+  height: 34px;
+  padding: 0 10px;
+  font-size: 13px;
+  max-width: 200px;
+}
+
+/* Beats the input[type="number"] base rule, which is more specific. */
+input.pv-number {
+  height: 34px;
+  width: 88px;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.field--narrow {
+  flex: 0 0 auto;
+}
+
+.field--narrow input[type="number"] {
+  width: 110px;
+}
+
+.btn-small {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.pv-readout {
+  flex: 1 1 100%;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.pv-readout.is-good {
+  color: var(--green);
+}
+
+.pv-readout.is-tight {
+  color: var(--red);
+  font-weight: 500;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 34px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
   border: none;
-  background: #c0c0c0;
-  color: #000;
-  text-decoration: none;
-  font-size: 10px;
-  font-weight: bold;
-  box-shadow: inset 1px 1px 0px #ffffff, 
-              inset -1px -1px 0px #000000, 
-              inset 2px 2px 0px #dfdfdf, 
-              inset -2px -2px 0px #808080;
 }
 
-.technique-link:hover,
-.subtech-link:hover {
-  background: #c0c0c0;
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-strong);
 }
 
-.technique-link:active,
-.subtech-link:active {
-  box-shadow: inset 1px 1px 0px #000000, 
-              inset -1px -1px 0px #ffffff, 
-              inset 2px 2px 0px #808080, 
-              inset -2px -2px 0px #dfdfdf;
-  padding-top: 1px;
-  padding-left: 1px;
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-strong);
 }
 
-.subtech-checkbox {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 6px;
-  align-items: center;
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* Preview styles */
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid #ffffff;
+}
+
+.preview-panel-body {
+  padding: 12px 16px 16px;
+}
+
+.preview-workspace {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: #eef0f3;
+  overflow: auto;
+  width: 100%;
+  height: 560px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.preview-stage-holder {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+/* The stage is the sheet at true page pixels; a CSS transform zooms the
+   whole thing so an entire A4/A3 is visible inside the panel at once. */
+.preview-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+}
+
+.preview-stage.is-sheet {
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+}
+
+.preview-message {
+  color: var(--text-secondary);
+  padding: 24px;
+}
+
+.preview-scale-badge {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 10;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--text);
+  color: #ffffff;
+  border-radius: 999px;
+}
+
+/* Below roughly 35% the exported text stops being printable. */
+.preview-scale-badge.is-tight {
+  background: var(--red);
+}
+
+/* Everything below mirrors the mxCell styles the exporter writes, so the
+   preview wraps text the same way draw.io will: same face, same padding
+   (spacingLeft 6 / others 2), no stroke, square corners. */
 .preview-card {
   position: absolute;
   box-sizing: border-box;
@@ -663,40 +1210,78 @@ button.small {
   overflow: hidden;
 }
 
+/* shape=step;fixedSize=1;size=10 — chevron with a matching notch on the
+   left. size is absolute in drawio, so it stays 10px here regardless of
+   the diagram scale. */
 .preview-tactic {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 4px 10px;
+  padding: 5px 5px 5px 6px;
   font-weight: bold;
-  box-sizing: border-box;
+  color: #ffffff;
+  border-radius: 0;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 10px) 0,
+    100% 50%,
+    calc(100% - 10px) 100%,
+    0 100%,
+    10px 50%
+  );
 }
 
-.preview-technique {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 4px 8px;
-  font-size: 11px;
-  box-sizing: border-box;
-  color: #000000;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-}
-
+.preview-technique,
 .preview-subtech {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 4px 8px;
-  font-size: 10px;
-  box-sizing: border-box;
+  padding: 2px 2px 2px 6px;
   color: #000000;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0;
+  border: none;
 }
 
 .preview-subtech-accent {
   position: absolute;
   box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------- */
+/* Narrow screens                                                    */
+/* ---------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .site-header,
+  .toolbar,
+  .settings-panel,
+  .tactics-tabbar {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .hero {
+    padding: 28px 16px 20px;
+  }
+
+  .hero-title {
+    font-size: 28px;
+  }
+
+  .tactics {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .preview-panel {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  /* Chrome takes too much of a short viewport once the toolbar wraps. */
+  .app-chrome {
+    position: static;
+  }
 }

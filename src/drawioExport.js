@@ -1,11 +1,14 @@
 (function () {
   "use strict";
   const Mitre = (window.Mitre = window.Mitre || {});
-  const { STYLES } = Mitre.config;
+  const { STYLES, fontScale } = Mitre.config;
   const { computeLayout } = Mitre.layout;
 
   function buildDrawioXml(selection, options = {}) {
-    const { isFstecMode, columns } = computeLayout(selection, options);
+    const { isFstecMode, columns, scale, pageWidth, pageHeight, fontSize } =
+      computeLayout(selection, options);
+    const F = fontScale(fontSize, isFstecMode);
+    const fs = (basePx) => Math.max(1, Math.round(basePx * scale));
 
     const doc = document.implementation.createDocument("", "", null);
     const mxfile = doc.createElement("mxfile");
@@ -34,8 +37,8 @@
       fold: "1",
       page: "1",
       pageScale: "1",
-      pageWidth: "827",
-      pageHeight: "1169",
+      pageWidth: String(pageWidth),
+      pageHeight: String(pageHeight),
       math: "0",
       shadow: "0",
     }).forEach(([key, value]) => graphModel.setAttribute(key, value));
@@ -79,12 +82,12 @@
 
     columns.forEach((tactic) => {
       const tacticLabel = isFstecMode
-        ? `<div style="line-height: 130%;"><font style="font-size: 14px;">${tactic.name}</font></div><div style="font-size: 12px;">${tactic.code}</div>`
-        : `<div style="line-height: 100%;"><font style="font-size: 16px;">${tactic.name} ${tactic.code}</font></div>`;
+        ? `<div style="line-height: 130%;"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name}</font></div><div style="font-size: ${fs(F.tacticCode)}px;">${tactic.code}</div>`
+        : `<div style="line-height: 100%;"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name} ${tactic.code}</font></div>`;
 
       createCell({
         value: tacticLabel,
-        style: `${STYLES.tactic}fillColor=${tactic.fillColor};`,
+        style: `${STYLES.tactic}fillColor=${tactic.fillColor};fontSize=${fs(F.tacticStyle)};`,
         geometry: {
           x: String(tactic.x),
           y: String(tactic.y),
@@ -97,15 +100,15 @@
         const techniqueValue = isFstecMode
           ? [
               technique.code
-                ? `<div style="font-size: 13px;"><b>${technique.code}</b></div>`
+                ? `<div style="font-size: ${fs(F.techniqueCode)}px;"><b>${technique.code}</b></div>`
                 : "",
-              `<div style="font-size: 12px;">${technique.name}</div>`,
+              `<div style="font-size: ${fs(F.techniqueName)}px;">${technique.name}</div>`,
             ].join("")
-          : `<span style="font-size: 14px;"><b>${technique.code}</b></span><div style="font-size: 12px;">${technique.name}</div>`;
+          : `<span style="font-size: ${fs(F.techniqueCode)}px;"><b>${technique.code}</b></span><div style="font-size: ${fs(F.techniqueName)}px;">${technique.name}</div>`;
 
         createCell({
           value: techniqueValue,
-          style: `${STYLES.technique}fillColor=${technique.fill};`,
+          style: `${STYLES.technique}fillColor=${technique.fill};fontSize=${fs(F.techniqueStyle)};`,
           geometry: {
             x: String(technique.x),
             y: String(technique.y),
@@ -115,11 +118,11 @@
         });
 
         technique.subtechniques.forEach((sub) => {
-          const subValue = `<span style="font-size: 12px;"><b>${sub.code}</b></span><div style="font-size: 10px;">${sub.name}</div>`;
+          const subValue = `<span style="font-size: ${fs(F.subCode)}px;"><b>${sub.code}</b></span><div style="font-size: ${fs(F.subName)}px;">${sub.name}</div>`;
 
           createCell({
             value: subValue,
-            style: `${STYLES.subtech}fillColor=${sub.fill};`,
+            style: `${STYLES.subtech}fillColor=${sub.fill};fontSize=${fs(F.subStyle)};`,
             geometry: {
               x: String(sub.x),
               y: String(sub.y),

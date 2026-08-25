@@ -33,7 +33,8 @@
       const summary = fragment.querySelector(".tactic-summary");
       const summaryTitle = summary.querySelector(".tactic-title");
       const toggleBtn = summary.querySelector(".tactic-toggle");
-      summaryTitle.textContent = `${tactic.name} (${tactic.code})`;
+      summaryTitle.textContent = tactic.name;
+      summaryTitle.title = `${tactic.name} (${tactic.code})`;
       toggleBtn.dataset.tacticCode = tactic.code;
       tacticEl.dataset.tacticCode = tactic.code;
 
@@ -54,6 +55,11 @@
           const selectAllBtn = techNode.querySelector(".technique-select-all");
           const techLink = techNode.querySelector(".technique-link");
 
+          const expandBtn = techNode.querySelector(".technique-expand");
+          const hasSubs = Boolean(
+            technique.subtechniques && technique.subtechniques.length
+          );
+
           title.textContent = technique.code;
           name.textContent = technique.name;
           if (techniqueCard) {
@@ -64,12 +70,14 @@
           checkbox.dataset.tacticIndex = String(tIndex);
           checkbox.dataset.techIndex = String(techIndex);
 
-          if (technique.subtechniques && technique.subtechniques.length) {
+          if (hasSubs) {
             selectAllBtn?.classList.remove("hidden");
             selectAllBtn?.setAttribute("data-tactic-index", String(tIndex));
             selectAllBtn?.setAttribute("data-tech-index", String(techIndex));
+            expandBtn?.classList.remove("hidden");
           } else {
             selectAllBtn?.classList.add("hidden");
+            expandBtn?.classList.add("hidden");
           }
 
           if (techLink) {
@@ -81,9 +89,15 @@
             techLink.title = `Открыть ${technique.code} на mitre.ptsecurity.com`;
           }
 
-          techniqueHolder.appendChild(techNode);
+          // technique + its subtech list share a wrapper so the list stays the
+          // technique card's immediate next sibling (import.js walks that link)
+          // while the pair can be collapsed as one accordion unit.
+          const group = document.createElement("div");
+          group.className = "technique-group";
+          group.appendChild(techNode);
+          techniqueHolder.appendChild(group);
 
-          if (technique.subtechniques && technique.subtechniques.length) {
+          if (hasSubs) {
             const subList = document.createElement("div");
             subList.className = "subtech-list";
             technique.subtechniques.forEach((sub, subIndex) => {
@@ -117,7 +131,7 @@
               subList.appendChild(subNode);
             });
 
-            techniqueHolder.appendChild(subList);
+            group.appendChild(subList);
           }
         });
 
@@ -126,7 +140,62 @@
 
     buildCodeIndexMap();
     updateGreenHighlights();
+    updateTechniqueCounts();
     renderTacticsTabbar(tactics);
+    requestAnimationFrame(updateScrollbars);
+  }
+
+  // Footer badge on each technique card: how many of its subtechniques are
+  // currently selected. Mirrors the coverage badge on the reference matrix,
+  // but counts the thing this tool actually acts on — the export selection.
+  function updateTechniqueCounts() {
+    tacticsContainer.querySelectorAll(".technique-group").forEach((group) => {
+      const card = group.querySelector(".technique");
+      const badge = group.querySelector(".technique-count");
+      if (!card || !badge) return;
+
+      const subInputs = group.querySelectorAll(
+        '.subtech-list input[type="checkbox"]'
+      );
+      if (!subInputs.length) {
+        const selfChecked = card.querySelector('input[type="checkbox"]')?.checked;
+        badge.textContent = selfChecked ? "выбрано" : "";
+        badge.classList.toggle("is-filled", Boolean(selfChecked));
+        return;
+      }
+
+      const checked = Array.from(subInputs).filter((i) => i.checked).length;
+      badge.textContent = `${checked}/${subInputs.length}`;
+      badge.classList.toggle("is-filled", checked > 0);
+    });
+  }
+
+  function setTechniqueExpanded(group, expanded) {
+    group.classList.toggle("is-expanded", expanded);
+    const btn = group.querySelector(".technique-expand");
+    if (btn) {
+      btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+      btn.setAttribute(
+        "aria-label",
+        expanded ? "Скрыть подтехники" : "Показать подтехники"
+      );
+    }
+  }
+
+  function handleTechniqueExpand(event) {
+    const btn = event.target.closest(".technique-expand");
+    if (!btn) return;
+    event.preventDefault();
+    const group = btn.closest(".technique-group");
+    if (!group) return;
+    setTechniqueExpanded(group, !group.classList.contains("is-expanded"));
+    requestAnimationFrame(updateScrollbars);
+  }
+
+  function setAllSubtechniquesExpanded(expanded) {
+    tacticsContainer
+      .querySelectorAll(".technique-group")
+      .forEach((group) => setTechniqueExpanded(group, expanded));
     requestAnimationFrame(updateScrollbars);
   }
 
@@ -251,15 +320,10 @@
 
   function updateTacticToggleButton(button, collapsed) {
     if (!button) return;
-    button.textContent = collapsed ? "▣" : "▢";
-    button.setAttribute(
-      "aria-label",
-      collapsed ? "Показать тактику" : "Скрыть тактику"
-    );
-    button.setAttribute(
-      "title",
-      collapsed ? "Показать тактику" : "Скрыть тактику"
-    );
+    const label = collapsed ? "Показать тактику" : "Скрыть тактику";
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+    button.setAttribute("aria-expanded", collapsed ? "false" : "true");
   }
 
   // Quick-jump tab strip: with 14 tactic columns laid out side by side,
@@ -289,6 +353,43 @@
     });
   }
 
+  // Jump to a tactic by scrolling ONLY the matrix sideways. scrollIntoView is
+  // deliberately not used: it also scrolls the page vertically and parks the
+  // column header underneath the sticky chrome.
+  function scrollTacticIntoView(tacticCard) {
+    const containerRect = tacticsContainer.getBoundingClientRect();
+    const cardRect = tacticCard.getBoundingClientRect();
+    const padLeft =
+      parseFloat(getComputedStyle(tacticsContainer).paddingLeft) || 0;
+    const target =
+      tacticsContainer.scrollLeft + (cardRect.left - containerRect.left) - padLeft;
+
+    tacticsContainer.scrollTo({
+      left: Math.max(0, target),
+      behavior: "smooth",
+    });
+  }
+
+  // If the board's headers have already scrolled above the sticky chrome,
+  // lift the page just far enough to show them again. Only ever scrolls up,
+  // so a jump never drags the reader away from where they were reading.
+  function revealMatrixTop() {
+    const chrome = document.querySelector(".app-chrome");
+    const wrapper = document.querySelector(".tactics-scroll-wrapper");
+    if (!chrome || !wrapper) return;
+
+    const isSticky = getComputedStyle(chrome).position === "sticky";
+    const chromeHeight = isSticky ? chrome.getBoundingClientRect().height : 0;
+    const wrapperTop = wrapper.getBoundingClientRect().top;
+
+    if (wrapperTop < chromeHeight) {
+      window.scrollTo({
+        top: Math.max(0, window.scrollY + wrapperTop - chromeHeight - 8),
+        behavior: "smooth",
+      });
+    }
+  }
+
   function handleTacticsTabbarClick(event) {
     const btn = event.target.closest(".tactics-tab");
     if (!btn) return;
@@ -302,7 +403,14 @@
       persistTacticState();
       updateTacticsTabbarState();
     }
-    tacticCard.scrollIntoView({ inline: "start", block: "nearest" });
+
+    tacticsTabbar.querySelectorAll(".tactics-tab").forEach((tab) => {
+      tab.classList.toggle("is-active", tab === btn);
+    });
+    btn.scrollIntoView({ inline: "nearest", block: "nearest" });
+
+    scrollTacticIntoView(tacticCard);
+    revealMatrixTop();
   }
 
   Mitre.render = {
@@ -310,6 +418,7 @@
     renderTactics,
     buildCodeIndexMap,
     updateGreenHighlights,
+    updateTechniqueCounts,
     updateScrollbars,
     syncScrollbars,
     handleWheelScroll,
@@ -318,5 +427,7 @@
     collapseAllTactics,
     expandAllTactics,
     handleTacticsTabbarClick,
+    handleTechniqueExpand,
+    setAllSubtechniquesExpanded,
   };
 })();

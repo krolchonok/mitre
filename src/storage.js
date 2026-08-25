@@ -64,6 +64,25 @@
     saveJSON(config.SETTINGS_STATE_STORAGE_KEY, isOpen);
   }
 
+  function loadPageFitState() {
+    const saved = loadJSON(config.PAGE_FIT_STORAGE_KEY);
+    const defaults = {
+      size: "none",
+      orientation: "portrait",
+      flow: "auto",
+      columnWidth: config.DRAWIO_LAYOUT.columnWidth,
+      fontSize: config.DRAWIO_LAYOUT.baseFontSize,
+      widthMode: "auto",
+    };
+    return saved && typeof saved === "object"
+      ? { ...defaults, ...saved }
+      : defaults;
+  }
+
+  function savePageFitState(pageFit) {
+    saveJSON(config.PAGE_FIT_STORAGE_KEY, pageFit);
+  }
+
   function loadLastSelection() {
     return loadJSON(config.LAST_SELECTION_STORAGE_KEY);
   }
@@ -83,6 +102,8 @@
     saveGreenFilterState,
     loadSettingsPanelState,
     saveSettingsPanelState,
+    loadPageFitState,
+    savePageFitState,
     loadLastSelection,
     saveLastSelection,
   };
