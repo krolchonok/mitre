@@ -32,7 +32,11 @@
 
   --col-width: 244px;
 
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  /* System stack only — the tool must work offline and straight from
+     file://, so no webfont is fetched. Ordered to land on a neutral
+     grotesque with full Cyrillic coverage on each platform. */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Noto Sans", "Liberation Sans", "Helvetica Neue", Arial, sans-serif;
   line-height: 1.4;
   color: var(--text);
 }
@@ -486,7 +490,8 @@ textarea {
   height: auto;
   min-height: 92px;
   padding: 10px 12px;
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas,
+    "DejaVu Sans Mono", monospace;
   font-size: 13px;
   resize: vertical;
 }
