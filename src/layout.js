@@ -14,6 +14,15 @@
 
   const RECON_TACTIC_CODE = "TA0043";
 
+  function clampHeaderFontSize(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return DRAWIO_LAYOUT.headerFontSize;
+    return Math.min(
+      Math.max(Math.round(n), DRAWIO_LAYOUT.minHeaderFontSize),
+      DRAWIO_LAYOUT.maxHeaderFontSize
+    );
+  }
+
   function clampFontSize(value) {
     const n = Number(value);
     if (!Number.isFinite(n) || n <= 0) return DRAWIO_LAYOUT.baseFontSize;
@@ -151,8 +160,21 @@
   // therefore lower the maximum.
   function computeCellSize(selection, columnWidth, layout, opts) {
     const compact = { compact: opts.isFstecMode, fontSize: opts.fontSize };
-    let techniqueHeight = layout.techniqueBaseHeight;
-    let subtechniqueHeight = layout.subTechniqueBaseHeight;
+    // Floor is the height of a single line at this font — taking the raw
+    // base height instead pinned small fonts to a 52px cell they did not
+    // need, which read as bloated padding.
+    let techniqueHeight = computeCardHeight(
+      "",
+      layout.techniqueBaseHeight,
+      columnWidth,
+      compact
+    );
+    let subtechniqueHeight = computeCardHeight(
+      "",
+      layout.subTechniqueBaseHeight,
+      columnWidth - layout.subAccentWidth,
+      compact
+    );
 
     selection.forEach((tactic) => {
       tactic.techniques.forEach((technique) => {
@@ -186,9 +208,12 @@
   // most lines at this width. Without it the header stays at its 40px default
   // and long tactic names spill out of the chevron as soon as columns narrow.
   // The step shape's arrow point eats horizontal room, hence the wider padding.
-  function computeMitreHeaderHeight(selection, columnWidth, layout, fontSize) {
-    const headerFont = fontSize + 4;
+  function computeMitreHeaderHeight(selection, columnWidth, layout, headerFont) {
     const lineHeight = Math.round(headerFont * 1.25);
+    // Floor tracks the header font for the same reason the cell floor does.
+    const floor = Math.round(
+      (layout.headerHeight * headerFont) / DRAWIO_LAYOUT.headerFontSize
+    );
     // The step shape's arrow point and notch eat ~20px of the usable width.
     const usable = Math.max(columnWidth - 26, 20);
     return selection.reduce((tallest, tactic) => {
@@ -199,13 +224,18 @@
         "bold"
       );
       return Math.max(tallest, lines * lineHeight + 16);
-    }, layout.headerHeight);
+    }, floor);
   }
 
   function buildAllColumns(selection, columnWidth, layout, opts) {
     const headerHeight = opts.isFstecMode
       ? computeMaxFstecHeaderHeight(selection, columnWidth, layout)
-      : computeMitreHeaderHeight(selection, columnWidth, layout, opts.fontSize);
+      : computeMitreHeaderHeight(
+          selection,
+          columnWidth,
+          layout,
+          opts.headerFontSize
+        );
     const cell = computeCellSize(selection, columnWidth, layout, opts);
     return selection.map((tactic) =>
       buildColumn(tactic, columnWidth, headerHeight, layout, opts, cell)
@@ -317,12 +347,17 @@
           pageTarget.height / placed.height
         );
 
-        // Prefer the least shrinking; break ties toward filling more of
-        // the sheet so the result does not float in a sea of margin.
-        const coverage =
-          (placed.width * scale * (placed.height * scale)) /
-          (pageTarget.width * pageTarget.height);
-        const score = scale * 1000 + coverage;
+        // Prefer the least shrinking. Ties are broken by how close the
+        // diagram's proportions are to the sheet's, which varies smoothly
+        // with the inputs — an area-coverage tie-break flipped between
+        // wildly different arrangements on a one-step font change, so the
+        // board appeared to jump around while dragging a slider.
+        const diagramAspect = placed.width / placed.height;
+        const pageAspect = pageTarget.width / pageTarget.height;
+        const aspectFit =
+          Math.min(diagramAspect, pageAspect) /
+          Math.max(diagramAspect, pageAspect);
+        const score = scale * 1000 + aspectFit;
 
         if (!best || score > best.score) {
           best = { score, scale, placed, perRow, columnWidth };
@@ -345,8 +380,23 @@
     } = options;
     const isFstecMode = mode === "fstec";
 
+    const fontSize = clampFontSize(options.fontSize);
+    const headerFontSize = clampHeaderFontSize(options.headerFontSize);
+
+    // Gutters and margins are part of the type scale, not fixed furniture.
+    // Left absolute they stayed 30px wide while the cards shrank, so at a
+    // small font the diagram read as mostly gap — a quarter of the column
+    // width at 6px against a fourteenth at 24px.
+    const gapRatio = fontSize / DRAWIO_LAYOUT.baseFontSize;
+    const scaleGap = (v) => Math.max(1, Math.round(v * gapRatio));
+
     const layout = {
       ...DRAWIO_LAYOUT,
+      originX: scaleGap(DRAWIO_LAYOUT.originX),
+      originY: scaleGap(DRAWIO_LAYOUT.originY),
+      columnGap: scaleGap(DRAWIO_LAYOUT.columnGap),
+      verticalGap: scaleGap(DRAWIO_LAYOUT.verticalGap),
+      subAccentWidth: scaleGap(DRAWIO_LAYOUT.subAccentWidth),
       headerHeight: isFstecMode
         ? DRAWIO_LAYOUT.headerHeight + 40
         : DRAWIO_LAYOUT.headerHeight,
@@ -357,14 +407,13 @@
         ? DRAWIO_LAYOUT.subTechniqueBaseHeight + 18
         : DRAWIO_LAYOUT.subTechniqueBaseHeight,
     };
-
-    const fontSize = clampFontSize(options.fontSize);
     const opts = {
       useGreen,
       greenTechniques,
       greenSubtechniques,
       isFstecMode,
       fontSize,
+      headerFontSize,
     };
     const pageTarget = resolvePageTarget(options.pageFit);
 
@@ -403,6 +452,7 @@
         bounds: { width: placed.width, height: placed.height },
         scale: 1,
         fontSize,
+        headerFontSize,
         requestedWidth,
         perRow: built.length,
         columnWidth: naturalWidth,
@@ -429,6 +479,7 @@
         bounds: { width: placed.width, height: placed.height },
         scale: 1,
         fontSize,
+        headerFontSize,
         requestedWidth,
         perRow: built.length,
         columnWidth: layout.columnWidth,
@@ -447,6 +498,7 @@
       },
       scale: best.scale,
       fontSize,
+      headerFontSize,
       requestedWidth,
       perRow: best.perRow,
       columnWidth: best.columnWidth,

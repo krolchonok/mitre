@@ -1228,6 +1228,10 @@ input[type="range"]::-moz-range-thumb {
   font-weight: bold;
   color: #ffffff;
   border-radius: 0;
+  /* mxGraph breaks over-long words in its labels; without the same rule a
+     word wider than the column escaped the chevron and got clipped. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
   clip-path: polygon(
     0 0,
     calc(100% - 10px) 0,
@@ -1247,6 +1251,8 @@ input[type="range"]::-moz-range-thumb {
   color: #000000;
   border-radius: 0;
   border: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .preview-subtech-accent {

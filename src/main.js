@@ -117,6 +117,7 @@
       ...getPageFitOption(),
       columnWidth: getColumnWidth(),
       fontSize: getFontSize(),
+      headerFontSize: getHeaderFontSize(),
       widthMode: getWidthMode(),
     };
     savePageFitState(next);
@@ -166,6 +167,13 @@
       : Mitre.config.DRAWIO_LAYOUT.baseFontSize;
   }
 
+  function getHeaderFontSize() {
+    const source = Mitre.dom.pageFitHeadFont || Mitre.dom.pvHeadFont;
+    return source
+      ? Mitre.preview.clampHeadFontSize(source.value)
+      : Mitre.config.DRAWIO_LAYOUT.headerFontSize;
+  }
+
   function handleGenerate() {
     const selection = collectSelection();
     if (!selection.length) {
@@ -177,6 +185,7 @@
       pageFit: getPageFitOption(),
       columnWidth: getColumnWidth(),
       fontSize: getFontSize(),
+      headerFontSize: getHeaderFontSize(),
       widthMode: getWidthMode(),
     });
     downloadFile(`mitre-${Date.now()}.drawio`, xml);
@@ -213,6 +222,7 @@
       pageFit: getPageFitOption(),
       columnWidth: getColumnWidth(),
       fontSize: getFontSize(),
+      headerFontSize: getHeaderFontSize(),
       widthMode: getWidthMode(),
     });
     downloadFile(`fstec-${Date.now()}.drawio`, xml);

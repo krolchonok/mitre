@@ -202,6 +202,13 @@
             </label>
             <input id="page-fit-font-range" type="range" min="6" max="24" step="1" value="12" />
           </div>
+          <div class="preset-row">
+            <label class="field field--narrow">
+              <span class="field-label">Шрифт заголовков, px</span>
+              <input id="page-fit-head-font" type="number" min="8" max="32" step="1" value="16" />
+            </label>
+            <input id="page-fit-head-font-range" type="range" min="8" max="32" step="1" value="16" />
+          </div>
           <p class="filter-note" id="page-fit-hint">
             «Авто» подбирает ширину колонок и переносит тактики рядами, чтобы
             шрифт остался крупным. «В один ряд» сохраняет цепочку тактик слева
@@ -317,6 +324,14 @@
         <label class="pv-field">
           <span class="pv-label">Точно</span>
           <input id="pv-font-value" type="number" min="6" max="24" step="1" value="12" class="pv-number" />
+        </label>
+        <label class="pv-field pv-field--slider">
+          <span class="pv-label">Шрифт заголовков, px</span>
+          <input id="pv-head-font" type="range" min="8" max="32" step="1" value="16" />
+        </label>
+        <label class="pv-field">
+          <span class="pv-label">Точно</span>
+          <input id="pv-head-font-value" type="number" min="8" max="32" step="1" value="16" class="pv-number" />
         </label>
         <button type="button" class="btn btn-small" id="pv-reset">Сбросить</button>
         <div class="pv-readout" id="pv-readout"></div>

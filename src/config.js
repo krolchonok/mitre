@@ -12,6 +12,9 @@
       baseFontSize: 12,
       minFontSize: 6,
       maxFontSize: 24,
+      headerFontSize: 16,
+      minHeaderFontSize: 8,
+      maxHeaderFontSize: 32,
       columnGap: 30,
       headerHeight: 40,
       techniqueBaseHeight: 52,
@@ -44,15 +47,16 @@
         "rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fontColor=#000000;",
     },
 
-    // Every label size derives from one base, so a single control moves the
-    // whole type scale and the exporter and preview can never disagree.
-    // At base 12 these reproduce the original hardcoded sizes exactly.
-    fontScale(base, isFstec) {
+    // Two independent bases: `base` sizes the tiles (techniques and their
+    // subtechniques), `head` sizes the tactic headers. `head` is the tactic
+    // label size directly, so the number in the UI is the number on screen.
+    // At base 12 / head 16 these reproduce the original hardcoded sizes.
+    fontScale(base, head, isFstec) {
       return isFstec
         ? {
-            tacticStyle: base + 5,
-            tacticName: base + 2,
-            tacticCode: base,
+            tacticStyle: head + 1,
+            tacticName: head - 2,
+            tacticCode: head - 4,
             techniqueStyle: base,
             techniqueCode: base + 1,
             techniqueName: base,
@@ -61,9 +65,9 @@
             subName: base - 2,
           }
         : {
-            tacticStyle: base + 5,
-            tacticName: base + 4,
-            tacticCode: base + 4,
+            tacticStyle: head + 1,
+            tacticName: head,
+            tacticCode: head,
             techniqueStyle: base,
             techniqueCode: base + 2,
             techniqueName: base,

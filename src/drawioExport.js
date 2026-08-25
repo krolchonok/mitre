@@ -5,9 +5,16 @@
   const { computeLayout } = Mitre.layout;
 
   function buildDrawioXml(selection, options = {}) {
-    const { isFstecMode, columns, scale, pageWidth, pageHeight, fontSize } =
-      computeLayout(selection, options);
-    const F = fontScale(fontSize, isFstecMode);
+    const {
+      isFstecMode,
+      columns,
+      scale,
+      pageWidth,
+      pageHeight,
+      fontSize,
+      headerFontSize,
+    } = computeLayout(selection, options);
+    const F = fontScale(fontSize, headerFontSize, isFstecMode);
     const fs = (basePx) => Math.max(1, Math.round(basePx * scale));
 
     const doc = document.implementation.createDocument("", "", null);

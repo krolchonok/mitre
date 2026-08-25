@@ -72,6 +72,7 @@
       flow: "auto",
       columnWidth: config.DRAWIO_LAYOUT.columnWidth,
       fontSize: config.DRAWIO_LAYOUT.baseFontSize,
+      headerFontSize: config.DRAWIO_LAYOUT.headerFontSize,
       widthMode: "auto",
     };
     return saved && typeof saved === "object"

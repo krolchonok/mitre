@@ -22,8 +22,12 @@
     pageFitFont,
     pageFitFontRange,
     pageFitWidthMode,
+    pageFitHeadFont,
+    pageFitHeadFontRange,
     pvFont,
     pvFontValue,
+    pvHeadFont,
+    pvHeadFontValue,
   } = Mitre.dom;
   const { state } = Mitre;
   const { computeLayout } = Mitre.layout;
@@ -34,6 +38,7 @@
 
   const DEFAULT_WIDTH = DRAWIO_LAYOUT.columnWidth;
   const DEFAULT_FONT = DRAWIO_LAYOUT.baseFontSize;
+  const DEFAULT_HEAD_FONT = DRAWIO_LAYOUT.headerFontSize;
 
   function togglePreviewWindow() {
     if (!previewWindow) return;
@@ -70,6 +75,7 @@
       columnWidth: pvWidth ? Number(pvWidth.value) : DEFAULT_WIDTH,
       fontSize: pvFont ? Number(pvFont.value) : DEFAULT_FONT,
       widthMode: pageFitWidthMode ? pageFitWidthMode.value : "auto",
+      headerFontSize: pvHeadFont ? Number(pvHeadFont.value) : DEFAULT_HEAD_FONT,
     };
   }
 
@@ -83,6 +89,7 @@
       flow: s.flow,
       columnWidth: s.columnWidth,
       fontSize: s.fontSize,
+      headerFontSize: s.headerFontSize,
       widthMode: s.widthMode,
     });
   }
@@ -113,6 +120,29 @@
   }
 
   const FONT_INPUTS = () => [pvFont, pvFontValue, pageFitFont, pageFitFontRange];
+  const HEAD_FONT_INPUTS = () =>
+    [pvHeadFont, pvHeadFontValue, pageFitHeadFont, pageFitHeadFontRange];
+
+  function clampHeadFontSize(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return DEFAULT_HEAD_FONT;
+    return Math.min(
+      Math.max(Math.round(n), DRAWIO_LAYOUT.minHeaderFontSize),
+      DRAWIO_LAYOUT.maxHeaderFontSize
+    );
+  }
+
+  function setHeadFontSize(value, { silent = false } = {}) {
+    const f = clampHeadFontSize(value);
+    HEAD_FONT_INPUTS().forEach((el) => {
+      if (el && el.value !== String(f)) el.value = String(f);
+    });
+    if (!silent) {
+      syncSettingsPanel(currentSettings());
+      updatePreview();
+    }
+    return f;
+  }
 
   function clampFontSize(value) {
     const n = Number(value);
@@ -144,6 +174,8 @@
     if (pageFitWidthMode && saved.widthMode) pageFitWidthMode.value = saved.widthMode;
     if (saved.columnWidth) setColumnWidth(saved.columnWidth, { silent: true });
     if (saved.fontSize) setFontSize(saved.fontSize, { silent: true });
+    if (saved.headerFontSize)
+      setHeadFontSize(saved.headerFontSize, { silent: true });
   }
 
   function handleControlChange() {
@@ -159,9 +191,14 @@
     setFontSize(event.target.value);
   }
 
+  function handleHeadFontInput(event) {
+    setHeadFontSize(event.target.value);
+  }
+
   function resetControls() {
     if (pvFlow) pvFlow.value = "auto";
     setFontSize(DEFAULT_FONT, { silent: true });
+    setHeadFontSize(DEFAULT_HEAD_FONT, { silent: true });
     setColumnWidth(DEFAULT_WIDTH);
   }
 
@@ -202,11 +239,12 @@
       pageFit: { size: s.size, orientation: s.orientation, flow: s.flow },
       columnWidth: s.columnWidth,
       fontSize: s.fontSize,
+      headerFontSize: s.headerFontSize,
       widthMode: s.widthMode,
     });
 
     const { columns, bounds, scale, perRow, pageWidth, pageHeight } = result;
-    const F = fontScale(result.fontSize, isFstecMode);
+    const F = fontScale(result.fontSize, result.headerFontSize, isFstecMode);
     const showSheet = s.size !== "none";
 
     // Canvas is the sheet when one is chosen, otherwise the diagram itself.
@@ -348,6 +386,9 @@
     [pvFont, pvFontValue, pageFitFont, pageFitFontRange].forEach((el) => {
       if (el) el.addEventListener("input", handleFontInput);
     });
+    HEAD_FONT_INPUTS().forEach((el) => {
+      if (el) el.addEventListener("input", handleHeadFontInput);
+    });
     if (pvReset) pvReset.addEventListener("click", resetControls);
     window.addEventListener("resize", updatePreview);
   }
@@ -360,5 +401,6 @@
     syncFromSettings,
     clampWidth,
     clampFontSize,
+    clampHeadFontSize,
   };
 })();
