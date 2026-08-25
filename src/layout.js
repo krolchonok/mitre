@@ -214,8 +214,8 @@
     const floor = Math.round(
       (layout.headerHeight * headerFont) / DRAWIO_LAYOUT.headerFontSize
     );
-    // The step shape's arrow point and notch eat ~20px of the usable width.
-    const usable = Math.max(columnWidth - 26, 20);
+    // Matches spacingLeft + spacingRight on the tactic style (18 + 18).
+    const usable = Math.max(columnWidth - 36, 20);
     return selection.reduce((tallest, tactic) => {
       const lines = countWrappedLines(
         `${tactic.name} ${tactic.code}`,
@@ -424,11 +424,20 @@
     // barely larger print. Scaling the width keeps characters-per-line, and
     // therefore the line count, constant.
     const rawWidth = Number(options.columnWidth) || 0;
+    // Width follows whichever type needs more room. Keying it to the tile
+    // font alone let the header change shape whenever the tiles were
+    // resized: at 8px tiles the column narrowed to 153 and a 16px header
+    // wrapped to 96px tall, at 20px tiles it widened and the same header
+    // collapsed to 40 — the header font never moved.
+    const widthRatio = Math.max(
+      fontSize / DRAWIO_LAYOUT.baseFontSize,
+      headerFontSize / DRAWIO_LAYOUT.headerFontSize
+    );
     const requestedWidth =
       rawWidth && options.widthMode !== "fixed"
         ? Math.min(
             Math.max(
-              Math.round((rawWidth * fontSize) / DRAWIO_LAYOUT.baseFontSize),
+              Math.round(rawWidth * widthRatio),
               DRAWIO_LAYOUT.minColumnWidth
             ),
             DRAWIO_LAYOUT.maxColumnWidth

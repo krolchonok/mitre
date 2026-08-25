@@ -37,8 +37,10 @@
     },
 
     STYLES: {
+      // spacingLeft/Right clear the step shape's 10px point and notch and
+      // leave the label breathing room instead of butting against the bevels.
       tactic:
-        "shape=step;perimeter=stepPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=10;strokeColor=none;fontColor=#FFFFFF;fontStyle=1;align=center;rounded=0;verticalAlign=middle;fontFamily=Helvetica;spacingTop=5;spacingBottom=5;spacingRight=5;spacingLeft=6;",
+        "shape=step;perimeter=stepPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=10;strokeColor=none;fontColor=#FFFFFF;fontStyle=1;align=center;rounded=0;verticalAlign=middle;fontFamily=Helvetica;spacingTop=6;spacingBottom=6;spacingRight=18;spacingLeft=18;",
       technique:
         "rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fontColor=#000000;align=left;verticalAlign=middle;fontFamily=Helvetica;spacingTop=2;spacingBottom=2;spacingRight=2;spacingLeft=6;",
       subtech:
