@@ -8,6 +8,7 @@
     computeCardHeight,
     normalizeMitreCode,
     countWrappedLines,
+    getMinRequiredColumnWidth,
   } = Mitre.utils;
   const { computeFstecColumnWidths, computeMaxFstecHeaderHeight } =
     Mitre.fstec;
@@ -599,6 +600,7 @@
     if (!selection || !selection.length) return null;
 
     const mode = options.mode || "mitre";
+    const isFstecMode = mode === "fstec";
     const useGreen = Boolean(options.useGreen);
     const greenTechniques = options.greenTechniques || new Set();
     const greenSubtechniques = options.greenSubtechniques || new Set();
@@ -627,7 +629,14 @@
         Math.max(DRAWIO_LAYOUT.minTitleFontSize, Math.round(fontSize * 1.15))
       );
 
-      for (const columnWidth of widths) {
+      const minReqWidth = getMinRequiredColumnWidth(
+        selection,
+        fontSize,
+        isFstecMode ? 36 : 28
+      );
+
+      for (const rawWidth of widths) {
+        const columnWidth = Math.max(rawWidth, minReqWidth);
         const res = computeLayout(selection, {
           mode,
           useGreen,

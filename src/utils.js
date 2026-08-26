@@ -72,6 +72,7 @@
   // actually uses. The old character-count estimate treated every glyph as
   // equally wide and over-reported lines for most names, which inflated every
   // card in the exported file — not just in the preview.
+  // Real word wrapping against measured glyph widths between spaces (unbroken whole words).
   function countWrappedLines(text, availableWidth, fontSize, fontWeight) {
     const safe = (text || "").trim();
     if (!safe) return 1;
@@ -96,17 +97,29 @@
 
       if (line) lines += 1;
       line = word;
-
-      // A single word wider than the column wraps inside itself.
-      while (!fits(line) && line.length > 1) {
-        let cut = 1;
-        while (cut < line.length && fits(line.slice(0, cut + 1))) cut += 1;
-        line = line.slice(cut);
-        lines += 1;
-      }
     });
 
     return lines;
+  }
+
+  function getMinRequiredColumnWidth(selection, fontSize = 12, padding = 24) {
+    let maxWordWidth = 0;
+    (selection || []).forEach((tactic) => {
+      (tactic.name || "").split(/\s+/).forEach((w) => {
+        maxWordWidth = Math.max(maxWordWidth, estimateTextWidth(w, fontSize, "bold"));
+      });
+      (tactic.techniques || []).forEach((technique) => {
+        (technique.name || "").split(/\s+/).forEach((w) => {
+          maxWordWidth = Math.max(maxWordWidth, estimateTextWidth(w, fontSize, "normal"));
+        });
+        (technique.subtechniques || []).forEach((sub) => {
+          (sub.name || "").split(/\s+/).forEach((w) => {
+            maxWordWidth = Math.max(maxWordWidth, estimateTextWidth(w, fontSize, "normal"));
+          });
+        });
+      });
+    });
+    return Math.max(160, Math.ceil(maxWordWidth + padding));
   }
 
   // Card geometry is driven by the font: a larger size both wraps the name
@@ -151,6 +164,7 @@
     estimateTextWidth,
     estimateCharsPerLine,
     countWrappedLines,
+    getMinRequiredColumnWidth,
     computeCardHeight,
     downloadFile,
   };
