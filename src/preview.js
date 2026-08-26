@@ -541,6 +541,12 @@
       greenSubtechniques: state.greenSubtechniques,
       size,
       orientation: s.orientation,
+      // Was missing entirely: autoFitLayout defaults to flow "single" (one
+      // row) when this isn't passed, so авторежим always crammed every
+      // tactic into one very wide row no matter what "Раскладка" said —
+      // forcing narrow columns, heavy text wrap, and a much smaller font
+      // than a multi-row layout of the same selection would need.
+      flow: s.flow,
     });
 
     if (best) {
