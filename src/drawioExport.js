@@ -5,12 +5,16 @@
   const { computeLayout } = Mitre.layout;
 
   function buildDrawioXml(selection, options = {}) {
-    // For Draw.io export, always compute cell geometry and font sizes at 1:1 full scale (scale = 1.0)
-    // so Draw.io displays large 13-16px readable fonts and generous 180-220px column widths!
+    // For Draw.io export, compute 1:1 full-scale cells (scale = 1.0)
+    // so Draw.io displays large 13-16px readable fonts and generous column widths!
+    // If the selection is large (> 7 tactics) or flow is multi, place columns in multi-row bands (perRow = 5)
+    // so the diagram stays compact (~1200px wide) and opens in Draw.io at 100% zoom!
+    const isMulti = options.pageFit?.flow === "multi" || selection.length > 7;
     const exportOptions = {
       ...options,
       allowUpscale: false,
-      pageFit: { size: "none" }
+      perRow: isMulti ? Math.min(5, selection.length) : selection.length,
+      pageFit: { size: "none", flow: isMulti ? "multi" : "single" }
     };
 
     const {

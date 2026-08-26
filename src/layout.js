@@ -507,16 +507,17 @@
         : rawWidth;
 
     if (!pageTarget) {
-      // No sheet chosen: keep the classic single row at natural width.
+      // No sheet chosen: keep natural width with requested or default perRow.
       const naturalWidth =
         requestedWidth ||
         (isFstecMode
           ? computeFstecColumnWidths(selection, layout)[0] || layout.columnWidth
           : layout.columnWidth);
       const built = buildAllColumns(selection, naturalWidth, layout, opts);
+      const perRow = options.perRow || (options.pageFit?.flow === "multi" ? Math.min(5, built.length) : built.length);
       const placed = placeColumns(
         built,
-        built.length || 1,
+        perRow,
         layout,
         Boolean(options.equalizeHeight)
       );
@@ -531,7 +532,7 @@
         headerFontSize,
         titleFontSize,
         requestedWidth,
-        perRow: built.length,
+        perRow,
         columnWidth: naturalWidth,
         pageWidth: PAGE_SIZES.a4.portrait.width,
         pageHeight: PAGE_SIZES.a4.portrait.height,
