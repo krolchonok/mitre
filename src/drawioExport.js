@@ -16,7 +16,7 @@
       titleFontSize,
     } = computeLayout(selection, options);
     const F = fontScale(fontSize, headerFontSize, isFstecMode, titleFontSize);
-    const fs = (basePx) => Math.max(11, Math.round(basePx * Math.max(0.85, scale)));
+    const fs = (basePx) => Math.max(1, basePx * scale);
 
     const doc = document.implementation.createDocument("", "", null);
     const mxfile = doc.createElement("mxfile");

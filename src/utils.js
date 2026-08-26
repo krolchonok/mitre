@@ -126,23 +126,23 @@
   }
 
   function fitTacticHeaderFont(name, code, tacticWidth, baseHeaderFont, scale = 1) {
-    const step = Math.max(3, Math.round(10 * scale));
-    const padX = Math.max(4, Math.round(14 * scale));
+    const step = Math.max(3, 10 * scale);
+    const padX = Math.max(4, 14 * scale);
     const usableWidth = tacticWidth - (step + padX) * 2;
 
-    let targetFont = Math.max(9, Math.round(baseHeaderFont * Math.max(0.70, scale)));
+    let targetFont = baseHeaderFont * scale;
 
     const words = `${name || ""} ${code || ""}`.split(/\s+/);
     words.forEach((word) => {
       while (
-        targetFont > 8 &&
-        estimateTextWidth(word, targetFont, "bold") > usableWidth - 4
+        targetFont > 0.5 &&
+        estimateTextWidth(word, targetFont, "bold") > usableWidth - 2
       ) {
-        targetFont -= 0.5;
+        targetFont -= 0.1;
       }
     });
 
-    return Math.round(targetFont);
+    return targetFont;
   }
 
   // Card geometry is driven by the font: a larger size both wraps the name
