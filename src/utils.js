@@ -168,7 +168,16 @@
     return adjustedBase + Math.max(0, lines - 1) * lineStep;
   }
 
-  function downloadFile(content, filename, contentType = "text/plain") {
+  function downloadFile(arg1, arg2, contentType = "application/xml") {
+    let content = arg1;
+    let filename = arg2;
+    if (
+      typeof arg1 === "string" &&
+      (arg1.endsWith(".drawio") || arg1.endsWith(".json") || arg1.endsWith(".xml") || arg1.endsWith(".txt"))
+    ) {
+      filename = arg1;
+      content = arg2;
+    }
     const blob = new Blob([content], { type: contentType });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");

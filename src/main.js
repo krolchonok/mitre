@@ -197,6 +197,13 @@
     );
   }
 
+  function getCleanFileName(prefix = "mitre") {
+    const now = new Date();
+    const d = now.toISOString().slice(0, 10);
+    const t = `${String(now.getHours()).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}`;
+    return `${prefix}_schema_${d}_${t}.drawio`;
+  }
+
   function handleGenerate() {
     const selection = collectSelection();
     if (!selection.length) {
@@ -214,7 +221,7 @@
       allowUpscale: getAllowUpscale(),
       equalizeHeight: getEqualizeHeight(),
     });
-    downloadFile(`mitre-${Date.now()}.drawio`, xml);
+    downloadFile(xml, getCleanFileName("mitre"));
   }
 
   function handleGenerateFstec() {
@@ -254,7 +261,7 @@
       allowUpscale: getAllowUpscale(),
       equalizeHeight: getEqualizeHeight(),
     });
-    downloadFile(`fstec-${Date.now()}.drawio`, xml);
+    downloadFile(xml, getCleanFileName("fstec"));
   }
 
   async function init() {
