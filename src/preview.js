@@ -440,10 +440,16 @@
   }
 
   function renderTacticCard(tactic, isFstecMode, scale = 1, F) {
-    const fs = (px) => Math.max(11, Math.round(px * Math.max(0.85, scale)));
-    const padX = Math.max(4, Math.round(18 * scale));
+    const padX = Math.max(4, Math.round(14 * scale));
     const padY = Math.max(2, Math.round(6 * scale));
     const step = Math.max(3, Math.round(10 * scale));
+    const fontHeader = Mitre.utils.fitTacticHeaderFont(
+      tactic.name,
+      tactic.code,
+      tactic.width,
+      F.tacticName,
+      scale
+    );
 
     const card = document.createElement("div");
     card.className = "preview-card preview-tactic";
@@ -456,8 +462,8 @@
     card.style.clipPath = `polygon(0 0, calc(100% - ${step}px) 0, 100% 50%, calc(100% - ${step}px) 100%, 0 100%, ${step}px 50%)`;
 
     card.innerHTML = isFstecMode
-      ? `<div style="line-height: 130%; font-size: ${fs(F.tacticName)}px;">${tactic.name}</div><div style="font-size: ${fs(F.tacticCode)}px; opacity: 0.85; margin-top: 4px;">${tactic.code}</div>`
-      : `<div style="line-height: 110%; font-size: ${fs(F.tacticName)}px; font-weight: bold;">${tactic.name} ${tactic.code}</div>`;
+      ? `<div style="line-height: 130%; font-size: ${fontHeader}px;">${tactic.name}</div><div style="font-size: ${Math.max(8, fontHeader - 2)}px; opacity: 0.85; margin-top: 4px;">${tactic.code}</div>`
+      : `<div style="line-height: 110%; font-size: ${fontHeader}px; font-weight: bold;">${tactic.name} ${tactic.code}</div>`;
 
     return card;
   }

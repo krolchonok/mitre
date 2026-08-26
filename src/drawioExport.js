@@ -95,17 +95,25 @@
     // most visibly past the tactic header's chevron point.
     const WRAP = "overflow-wrap:normal;word-break:normal;";
 
-    const padX = Math.max(2, Math.round(18 * scale));
+    const padX = Math.max(2, Math.round(14 * scale));
     const stepSize = Math.max(2, Math.round(10 * scale));
 
     columns.forEach((tactic) => {
+      const fontHeader = fitTacticHeaderFont(
+        tactic.name,
+        tactic.code,
+        tactic.width,
+        F.tacticName,
+        scale
+      );
+
       const tacticLabel = isFstecMode
-        ? `<div style="line-height: 130%;${WRAP}"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name}</font></div><div style="font-size: ${fs(F.tacticCode)}px;${WRAP}">${tactic.code}</div>`
-        : `<div style="line-height: 110%;${WRAP}"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name} ${tactic.code}</font></div>`;
+        ? `<div style="line-height: 130%;${WRAP}"><font style="font-size: ${fontHeader}px;">${tactic.name}</font></div><div style="font-size: ${Math.max(8, fontHeader - 2)}px;${WRAP}">${tactic.code}</div>`
+        : `<div style="line-height: 110%;${WRAP}"><font style="font-size: ${fontHeader}px;">${tactic.name} ${tactic.code}</font></div>`;
 
       createCell({
         value: tacticLabel,
-        style: `${STYLES.tactic}fillColor=${tactic.fillColor};fontSize=${fs(F.tacticStyle)};size=${stepSize};spacingRight=${padX};spacingLeft=${padX};`,
+        style: `${STYLES.tactic}fillColor=${tactic.fillColor};fontSize=${fontHeader};size=${stepSize};spacingRight=${padX};spacingLeft=${padX};`,
         geometry: {
           x: String(tactic.x),
           y: String(tactic.y),

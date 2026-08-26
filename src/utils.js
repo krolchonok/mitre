@@ -125,6 +125,26 @@
     return Math.max(160, Math.ceil(maxWordWidth + padding));
   }
 
+  function fitTacticHeaderFont(name, code, tacticWidth, baseHeaderFont, scale = 1) {
+    const step = Math.max(3, Math.round(10 * scale));
+    const padX = Math.max(4, Math.round(14 * scale));
+    const usableWidth = tacticWidth - (step + padX) * 2;
+
+    let targetFont = Math.max(9, Math.round(baseHeaderFont * Math.max(0.70, scale)));
+
+    const words = `${name || ""} ${code || ""}`.split(/\s+/);
+    words.forEach((word) => {
+      while (
+        targetFont > 8 &&
+        estimateTextWidth(word, targetFont, "bold") > usableWidth - 4
+      ) {
+        targetFont -= 0.5;
+      }
+    });
+
+    return Math.round(targetFont);
+  }
+
   // Card geometry is driven by the font: a larger size both wraps the name
   // into more lines and needs taller lines to hold them. Everything scales
   // off the 12px reference, so the default size reproduces the original
@@ -141,14 +161,15 @@
       Math.max(columnWidth - padding, 20),
       fontSize
     );
-    const lineStep = (compact ? 10 : 14) * ratio;
-    const adjustedBase =
-      (compact ? Math.max(baseHeight - 10, 28) : baseHeight) * ratio;
+    const lineStep = Math.round((compact ? 12 : 16) * ratio);
+    const adjustedBase = Math.round(
+      (compact ? Math.max(baseHeight - 10, 32) : baseHeight) * ratio
+    );
     return adjustedBase + Math.max(0, lines - 1) * lineStep;
   }
 
-  function downloadFile(filename, content) {
-    const blob = new Blob([content], { type: "application/xml" });
+  function downloadFile(content, filename, contentType = "text/plain") {
+    const blob = new Blob([content], { type: contentType });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -168,6 +189,7 @@
     estimateCharsPerLine,
     countWrappedLines,
     getMinRequiredColumnWidth,
+    fitTacticHeaderFont,
     computeCardHeight,
     downloadFile,
   };
