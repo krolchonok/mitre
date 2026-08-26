@@ -5,18 +5,32 @@
   const { computeLayout } = Mitre.layout;
 
   function buildDrawioXml(selection, options = {}) {
+    // For Draw.io export, always compute cell geometry and font sizes at 1:1 full scale (scale = 1.0)
+    // so Draw.io displays large 13-16px readable fonts and generous 180-220px column widths!
+    const exportOptions = {
+      ...options,
+      allowUpscale: false,
+      pageFit: { size: "none" }
+    };
+
     const {
       isFstecMode,
       columns,
-      scale,
-      pageWidth,
-      pageHeight,
       fontSize,
       headerFontSize,
       titleFontSize,
-    } = computeLayout(selection, options);
+    } = computeLayout(selection, exportOptions);
+
+    const { PAGE_SIZES } = Mitre.config;
+    const targetSize = options.pageFit ? options.pageFit.size : "a4";
+    const targetOrient = options.pageFit ? (options.pageFit.orientation || "landscape") : "landscape";
+    const paperSize = (PAGE_SIZES[targetSize] && PAGE_SIZES[targetSize][targetOrient])
+      ? PAGE_SIZES[targetSize][targetOrient]
+      : { width: 1169, height: 827 };
+
+    const scale = 1.0;
     const F = fontScale(fontSize, headerFontSize, isFstecMode, titleFontSize);
-    const fs = (basePx) => Math.max(1, basePx * scale);
+    const fs = (basePx) => Math.max(12, Math.round(basePx));
 
     const doc = document.implementation.createDocument("", "", null);
     const mxfile = doc.createElement("mxfile");
@@ -45,8 +59,8 @@
       fold: "1",
       page: "1",
       pageScale: "1",
-      pageWidth: String(pageWidth),
-      pageHeight: String(pageHeight),
+      pageWidth: String(paperSize.width),
+      pageHeight: String(paperSize.height),
       math: "0",
       shadow: "0",
     }).forEach(([key, value]) => graphModel.setAttribute(key, value));
