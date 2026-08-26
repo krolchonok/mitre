@@ -440,7 +440,7 @@
   }
 
   function renderTacticCard(tactic, isFstecMode, scale = 1, F) {
-    const fs = (px) => Math.max(1, px * scale);
+    const fs = (px) => Math.max(11, Math.round(px * Math.max(0.85, scale)));
     const padX = Math.max(4, Math.round(18 * scale));
     const padY = Math.max(2, Math.round(6 * scale));
     const step = Math.max(3, Math.round(10 * scale));
@@ -463,7 +463,7 @@
   }
 
   function renderTechniqueCard(technique, isFstecMode, scale = 1, F) {
-    const fs = (px) => Math.max(1, px * scale);
+    const fs = (px) => Math.max(11, Math.round(px * Math.max(0.85, scale)));
     const card = document.createElement("div");
     card.className = "preview-card preview-technique";
     card.style.left = `${technique.x}px`;
@@ -480,7 +480,7 @@
   }
 
   function renderSubtechCard(sub, scale = 1, F) {
-    const fs = (px) => Math.max(1, px * scale);
+    const fs = (px) => Math.max(11, Math.round(px * Math.max(0.85, scale)));
     const card = document.createElement("div");
     card.className = "preview-card preview-subtech";
     card.style.left = `${sub.x}px`;
