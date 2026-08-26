@@ -87,10 +87,17 @@
       return cell;
     };
 
+    // countWrappedLines (utils.js) sizes every card assuming an over-long
+    // single word can break mid-word to fit the column. draw.io's own
+    // whiteSpace=wrap only breaks at spaces, so without this the label
+    // stayed on one line and ran past the shape instead of wrapping —
+    // most visibly past the tactic header's chevron point.
+    const WRAP = "overflow-wrap:anywhere;word-break:break-word;";
+
     columns.forEach((tactic) => {
       const tacticLabel = isFstecMode
-        ? `<div style="line-height: 130%;"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name}</font></div><div style="font-size: ${fs(F.tacticCode)}px;">${tactic.code}</div>`
-        : `<div style="line-height: 100%;"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name} ${tactic.code}</font></div>`;
+        ? `<div style="line-height: 130%;${WRAP}"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name}</font></div><div style="font-size: ${fs(F.tacticCode)}px;">${tactic.code}</div>`
+        : `<div style="line-height: 100%;${WRAP}"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name} ${tactic.code}</font></div>`;
 
       createCell({
         value: tacticLabel,
@@ -109,9 +116,9 @@
               technique.code
                 ? `<div style="font-size: ${fs(F.techniqueCode)}px;"><b>${technique.code}</b></div>`
                 : "",
-              `<div style="font-size: ${fs(F.techniqueName)}px;">${technique.name}</div>`,
+              `<div style="font-size: ${fs(F.techniqueName)}px;${WRAP}">${technique.name}</div>`,
             ].join("")
-          : `<span style="font-size: ${fs(F.techniqueCode)}px;"><b>${technique.code}</b></span><div style="font-size: ${fs(F.techniqueName)}px;">${technique.name}</div>`;
+          : `<span style="font-size: ${fs(F.techniqueCode)}px;"><b>${technique.code}</b></span><div style="font-size: ${fs(F.techniqueName)}px;${WRAP}">${technique.name}</div>`;
 
         createCell({
           value: techniqueValue,
@@ -125,7 +132,7 @@
         });
 
         technique.subtechniques.forEach((sub) => {
-          const subValue = `<span style="font-size: ${fs(F.subCode)}px;"><b>${sub.code}</b></span><div style="font-size: ${fs(F.subName)}px;">${sub.name}</div>`;
+          const subValue = `<span style="font-size: ${fs(F.subCode)}px;"><b>${sub.code}</b></span><div style="font-size: ${fs(F.subName)}px;${WRAP}">${sub.name}</div>`;
 
           createCell({
             value: subValue,
