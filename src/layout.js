@@ -594,8 +594,8 @@
   }
 
   // Calculates optimal layout parameters (column width, font sizes)
-  // to fit the chosen sheet format (A4/A3) as much as possible in a single row ("в одну строку")
-  // with natural top alignment (without vertical gaps or vertical centering between cards).
+  // to fit the chosen sheet format (A4/A3) in a single row ("в одну строку")
+  // guaranteeing readable cards and text that NEVER overflow card or page boundaries.
   function autoFitLayout(selection, options = {}) {
     if (!selection || !selection.length) return null;
 
@@ -610,11 +610,11 @@
       size = "a4";
     }
     const orientation = options.orientation || "landscape";
-    const flow = "single";
-    const equalizeHeight = false; // Strictly OFF: natural top alignment, no vertical card stretching or gap centering!
+    const flow = options.flow || "single";
+    const equalizeHeight = false;
 
     const fontSizes = [9, 10, 11, 12, 13, 14, 16, 18, 20];
-    const widths = [120, 140, 150, 160, 180, 200, 220, 240, 260, 280, 300];
+    const widths = [120, 140, 150, 160, 180, 200, 220, 240, 260, 280];
 
     let bestCandidate = null;
     let bestScore = -Infinity;
@@ -653,11 +653,15 @@
         });
 
         const effectiveFont = fontSize * res.scale;
+        const effectiveWidth = columnWidth * res.scale;
+
         const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
         const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
 
-        // Scoring: prioritize scale factor, effective font legibility, and page fill
-        let score = res.scale * 1000 + effectiveFont * 100 + widthRatio * 300 + heightRatio * 200;
+        // Discard extreme shrinking where card width < 50px or font < 4px, which causes text overflow
+        if (effectiveFont < 4.0 || effectiveWidth < 50) continue;
+
+        let score = res.scale * 1000 + effectiveFont * 150 + widthRatio * 300 + heightRatio * 200;
 
         if (score > bestScore) {
           bestScore = score;
@@ -674,6 +678,25 @@
           };
         }
       }
+    }
+
+    // If A4 landscape cannot hold huge selection without card text overflow, auto-switch to A3 landscape
+    if (!bestCandidate && size === "a4") {
+      return autoFitLayout(selection, { ...options, size: "a3" });
+    }
+
+    if (!bestCandidate) {
+      bestCandidate = {
+        size: "a3",
+        orientation: "landscape",
+        flow: "single",
+        columnWidth: 140,
+        fontSize: 9,
+        headerFontSize: 12,
+        titleFontSize: 10,
+        equalizeHeight: false,
+        allowUpscale: false,
+      };
     }
 
     return bestCandidate;
