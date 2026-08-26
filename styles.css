@@ -249,6 +249,20 @@ button:disabled {
   border-color: var(--red-hover);
 }
 
+.btn-auto-highlight {
+  background: #e11d48;
+  border-color: #be123c;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(225, 29, 72, 0.35);
+}
+
+.btn-auto-highlight:hover:not(:disabled) {
+  background: #be123c;
+  border-color: #9f1239;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.5);
+}
+
 .btn-primary:disabled {
   background: var(--ui);
   border-color: var(--ui);

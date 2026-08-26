@@ -28,6 +28,8 @@
     pageFitTitleFontRange,
     pageFitAllowUpscale,
     pageFitEqualizeBtn,
+    pageFitAutoBtn,
+    mainAutoFitBtn,
     pvFont,
     pvFontValue,
     pvHeadFont,
@@ -36,9 +38,11 @@
     pvTitleFontValue,
     pvAllowUpscale,
     pvEqualizeBtn,
+    pvAutoBtn,
+    pvHeaderAutoBtn,
   } = Mitre.dom;
   const { state } = Mitre;
-  const { computeLayout } = Mitre.layout;
+  const { computeLayout, autoFitLayout } = Mitre.layout;
   const { DRAWIO_LAYOUT, fontScale } = Mitre.config;
   const { buildFstecSelectionFromSelection, FSTEC_TECHNIQUES } = Mitre.fstec;
   const { collectSelection } = Mitre.selection;
@@ -493,6 +497,74 @@
     return bar;
   }
 
+  const AUTO_FIT_BUTTONS = () => [
+    pvAutoBtn,
+    pageFitAutoBtn,
+    mainAutoFitBtn,
+    pvHeaderAutoBtn,
+  ];
+
+  function applyAutoFitSettings(s) {
+    if (!s) return;
+    if (pvSize) pvSize.value = s.size;
+    if (pageFitSize) pageFitSize.value = s.size;
+    if (pvOrientation) pvOrientation.value = s.orientation;
+    if (pageFitOrientation) pageFitOrientation.value = s.orientation;
+    if (pvFlow) pvFlow.value = s.flow;
+    if (pageFitFlow) pageFitFlow.value = s.flow;
+
+    setColumnWidth(s.columnWidth, { silent: true });
+    setFontSize(s.fontSize, { silent: true });
+    setHeadFontSize(s.headerFontSize, { silent: true });
+    setTitleFontSize(s.titleFontSize, { silent: true });
+    setAllowUpscale(Boolean(s.allowUpscale), { silent: true });
+    setEqualizeHeight(Boolean(s.equalizeHeight), { silent: true });
+
+    syncSettingsPanel(currentSettings());
+    updatePreview();
+  }
+
+  function handleAutoFitClick() {
+    if (!isPreviewOpen()) {
+      openPreviewWindow();
+    }
+
+    const mitreSelection = collectSelection();
+    if (!mitreSelection.length) {
+      if (pvReadout) pvReadout.textContent = "Выберите хотя бы одну технику для использования авторежима.";
+      return;
+    }
+
+    let selection = mitreSelection;
+    const isFstecMode = state.previewMode === "fstec";
+    if (isFstecMode) {
+      if (!FSTEC_TECHNIQUES.length) return;
+      const fstec = buildFstecSelectionFromSelection(mitreSelection);
+      selection = fstec.selection;
+      if (!selection.length) return;
+    }
+
+    const s = currentSettings();
+    const useGreen = greenFilterToggle?.checked === true;
+    let size = s.size;
+    if (!size || size === "none") {
+      size = "a4";
+    }
+
+    const best = autoFitLayout(selection, {
+      mode: isFstecMode ? "fstec" : "mitre",
+      useGreen,
+      greenTechniques: state.greenTechniques,
+      greenSubtechniques: state.greenSubtechniques,
+      size,
+      orientation: s.orientation,
+    });
+
+    if (best) {
+      applyAutoFitSettings(best);
+    }
+  }
+
   function wirePreviewControls() {
     [pvSize, pvOrientation, pvFlow, pageFitWidthMode].forEach((el) => {
       if (el) el.addEventListener("change", handleControlChange);
@@ -516,6 +588,9 @@
     EQUALIZE_BUTTONS().forEach((el) => {
       if (el) el.addEventListener("click", handleEqualizeClick);
     });
+    AUTO_FIT_BUTTONS().forEach((el) => {
+      if (el) el.addEventListener("click", handleAutoFitClick);
+    });
     if (pvReset) pvReset.addEventListener("click", resetControls);
     window.addEventListener("resize", updatePreview);
     document.addEventListener("keydown", handlePreviewKeydown);
@@ -528,6 +603,7 @@
     updatePreview,
     wirePreviewControls,
     syncFromSettings,
+    handleAutoFitClick,
     clampWidth,
     clampFontSize,
     clampHeadFontSize,

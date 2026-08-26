@@ -50,6 +50,9 @@
         <button id="preview-toggle-btn" type="button" class="btn">
           Предпросмотр
         </button>
+        <button id="main-auto-fit-btn" type="button" class="btn btn-auto-highlight" title="Вписать выбранную схему в лист по ширине и высоте (автоподбор)">
+          ⚡ Авторежим
+        </button>
       </div>
 
       <label class="switch-row">
@@ -223,6 +226,9 @@
             </label>
           </div>
           <div class="preset-row">
+            <button type="button" class="btn btn-primary" id="page-fit-auto-btn" title="Автоматически подобрать размеры по ширине, высоте и шрифтам для заполнения листа">
+              ⚡ Авторежим
+            </button>
             <button type="button" class="btn" id="page-fit-equalize-btn">
               Выровнять высоту категорий
             </button>
@@ -307,6 +313,7 @@
       <div class="preview-mode-switch">
         <button type="button" class="preview-mode-btn is-active" id="preview-mode-mitre">MITRE схема</button>
         <button type="button" class="preview-mode-btn" id="preview-mode-fstec">ФСТЭК схема</button>
+        <button type="button" class="btn btn-auto-highlight btn-small" id="pv-header-auto-btn" title="Автоматически подобрать размеры и растянуть по листу">⚡ Авторежим</button>
       </div>
 
       <div class="preview-controls">
@@ -370,6 +377,17 @@
             <input id="pv-allow-upscale" type="checkbox" />
             <span>Растянуть по листу</span>
           </span>
+        </label>
+        <label class="pv-field">
+          <span class="pv-label">&nbsp;</span>
+          <button
+            type="button"
+            class="btn btn-primary btn-small"
+            id="pv-auto-btn"
+            title="Автоматически подобрать ширину, высоту и шрифты под формат листа"
+          >
+            ⚡ Авторежим
+          </button>
         </label>
         <label class="pv-field">
           <span class="pv-label">&nbsp;</span>

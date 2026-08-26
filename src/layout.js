@@ -42,8 +42,14 @@
   }
 
   // Resolves a pageFit option ({ size: 'a4'|'a3', orientation: 'portrait'|'landscape' })
-  // into target pixel dimensions, or null if fitting is disabled.
+  // into target pixel dimensions, or null if fitting is disabled. A caller
+  // that already knows the exact pixels to fill — the live preview fitting
+  // to its own viewport, which is no fixed paper size — passes them
+  // directly via customTarget and skips the paper lookup entirely.
   function resolvePageTarget(pageFit) {
+    if (pageFit?.customTarget?.width > 0 && pageFit?.customTarget?.height > 0) {
+      return pageFit.customTarget;
+    }
     if (!pageFit || !pageFit.size || pageFit.size === "none") return null;
     const bySize = PAGE_SIZES[pageFit.size];
     if (!bySize) return null;
@@ -586,5 +592,94 @@
     };
   }
 
-  Mitre.layout = { computeLayout };
+  // Calculates optimal layout parameters (column width, font sizes, flow, height equalization)
+  // to fill the chosen sheet format (A4/A3) as much as possible while maintaining readability
+  // and ensuring uniform tile width and height across all cards.
+  function autoFitLayout(selection, options = {}) {
+    if (!selection || !selection.length) return null;
+
+    const mode = options.mode || "mitre";
+    const useGreen = Boolean(options.useGreen);
+    const greenTechniques = options.greenTechniques || new Set();
+    const greenSubtechniques = options.greenSubtechniques || new Set();
+
+    let size = options.size;
+    if (!size || size === "none") {
+      size = "a4";
+    }
+    const orientation = options.orientation || "landscape";
+
+    const flows = ["auto", "single"];
+    const equalizes = [true, false];
+    const fontSizes = [9, 10, 11, 12, 13, 14, 16, 18, 20];
+    const widths = [150, 170, 190, 210, 230, 250, 280, 310, 350, 400, 450];
+
+    let bestCandidate = null;
+    let bestScore = -Infinity;
+
+    for (const flow of flows) {
+      for (const equalizeHeight of equalizes) {
+        for (const fontSize of fontSizes) {
+          const headerFontSize = Math.min(
+            DRAWIO_LAYOUT.maxHeaderFontSize,
+            Math.max(DRAWIO_LAYOUT.minHeaderFontSize, Math.round(fontSize * 1.33))
+          );
+          const titleFontSize = Math.min(
+            DRAWIO_LAYOUT.maxTitleFontSize,
+            Math.max(DRAWIO_LAYOUT.minTitleFontSize, Math.round(fontSize * 1.15))
+          );
+
+          for (const columnWidth of widths) {
+            const res = computeLayout(selection, {
+              mode,
+              useGreen,
+              greenTechniques,
+              greenSubtechniques,
+              pageFit: { size, orientation, flow },
+              columnWidth,
+              fontSize,
+              headerFontSize,
+              titleFontSize,
+              widthMode: "auto",
+              allowUpscale: false,
+              equalizeHeight,
+            });
+
+            const effectiveFont = fontSize * res.scale;
+            if (effectiveFont < 5.0) continue;
+
+            const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
+            const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
+            const areaCoverage = widthRatio * heightRatio;
+
+            // Score calculation: prioritize page fill area, high scale factor, and font legibility
+            let score = areaCoverage * 600 + res.scale * 400 + effectiveFont * 35;
+
+            if (res.scale >= 0.90) score += 200;
+            if (effectiveFont < 8.0) score -= (8.0 - effectiveFont) * 50;
+            if (equalizeHeight && res.perRow < selection.length) score += 40;
+
+            if (score > bestScore) {
+              bestScore = score;
+              bestCandidate = {
+                size,
+                orientation,
+                flow,
+                columnWidth,
+                fontSize,
+                headerFontSize,
+                titleFontSize,
+                equalizeHeight,
+                allowUpscale: false,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    return bestCandidate;
+  }
+
+  Mitre.layout = { computeLayout, autoFitLayout };
 })();
