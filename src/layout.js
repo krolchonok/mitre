@@ -382,15 +382,18 @@
       // entirely; fall back to the narrowest legal column and let the final
       // uniform scale absorb the overflow rather than dropping the split.
       const exact = usable > 0 ? usable / perRow : minWidth;
-      // A width set by the user wins outright — the fitter then only chooses
-      // how many columns go per row and how much to shrink at the end.
-      const candidates = fixedWidth
-        ? new Set([Math.min(Math.max(fixedWidth, minWidth), maxWidth)])
-        : new Set([
-            Math.min(Math.max(exact, minWidth), maxWidth),
-            minWidth,
-            Math.min(maxWidth, Math.max(minWidth, layout.columnWidth)),
-          ]);
+      // Usable width and candidate column widths
+      const candidates = new Set();
+      if (fixedWidth) {
+        candidates.add(Math.min(Math.max(fixedWidth, minWidth), maxWidth));
+      } else {
+        candidates.add(Math.min(Math.max(exact, minWidth), maxWidth));
+        candidates.add(minWidth);
+        candidates.add(Math.min(maxWidth, Math.max(minWidth, layout.columnWidth)));
+        for (let w = minWidth; w <= maxWidth; w += 20) {
+          candidates.add(w);
+        }
+      }
 
       candidates.forEach((columnWidth) => {
         const built = buildAllColumns(selection, columnWidth, layout, opts);
@@ -610,8 +613,8 @@
     const flow = options.flow || "single";
     const equalizeHeight = false;
 
-    const fontSizes = [20, 18, 16, 15, 14, 13, 12];
-    const widths = [160, 180, 200, 220, 240, 260, 280];
+    const fontSizes = [22, 20, 18, 16, 15, 14, 13, 12];
+    const widths = [200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 440, 480];
 
     // Try A4, then A3 to find a sheet size that preserves large legible text
     for (const targetSize of ["a4", "a3"]) {
@@ -659,9 +662,9 @@
           const areaFill = widthRatio * heightRatio;
 
           // DISCARD MICRO-PRINT: effective font MUST be >= 5.5px and scale >= 0.40!
-          if (effectiveFont < 5.5 || res.scale < 0.40 || effectiveWidth < 60) continue;
+          if (effectiveFont < 5.5 || res.scale < 0.30 || effectiveWidth < 60) continue;
 
-          let score = effectiveFont * 500 + fontSize * 100 + areaFill * 800 + res.scale * 300;
+          let score = (widthRatio * 2000) + (effectiveFont * 500) + (areaFill * 800) + (res.scale * 300);
 
           if (score > bestScore) {
             bestScore = score;
