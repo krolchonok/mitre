@@ -702,8 +702,8 @@
           const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
           const areaFill = widthRatio * heightRatio;
 
-          // DISCARD MICRO-PRINT: effective font MUST be >= 5.5px and scale >= 0.40!
-          if (effectiveFont < 5.5 || res.scale < 0.30 || effectiveWidth < 60) continue;
+          // DISCARD MICRO-PRINT: effective font MUST be >= 10px and scale >= 0.60 for printed sheets!
+          if (effectiveFont < 10.0 || res.scale < 0.60 || effectiveWidth < 140) continue;
 
           let score = (widthRatio * 2000) + (effectiveFont * 500) + (areaFill * 800) + (res.scale * 300);
 
@@ -727,16 +727,16 @@
       if (bestCandidate) return bestCandidate;
     }
 
-    // For massive selections (150+ subtechniques), fall back to "none" (1:1 full scale)
-    // so letters stay 100% full 13px-17px size without micro-shrinking!
+    // When the selection has tall columns (10+ techniques), fitting on A4/A3 would crush fonts down to 5-7px.
+    // We automatically choose "none" (1:1 Full Scale) so letters are 100% full 18px-24px size: huge, bold, and readable!
     return {
       size: "none",
       orientation,
       flow,
-      columnWidth: 180,
-      fontSize: 13,
-      headerFontSize: 17,
-      titleFontSize: 15,
+      columnWidth: 280,
+      fontSize: 18,
+      headerFontSize: 24,
+      titleFontSize: 22,
       equalizeHeight: false,
       allowUpscale: true,
     };
