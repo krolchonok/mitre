@@ -529,10 +529,11 @@
 
     const s = currentSettings();
     const useGreen = greenFilterToggle?.checked === true;
-    let size = s.size;
-    if (!size || size === "none") {
-      size = "a4";
-    }
+    // "none" is passed straight through rather than coerced to A4 here:
+    // it means the user expressed no preference, which is exactly when
+    // autoFitLayout should pick the paper itself (A4, stepping up to A3
+    // only if A4 can't hold legible text). Coercing it hid that choice.
+    const size = s.size;
 
     const best = autoFitLayout(selection, {
       mode: isFstecMode ? "fstec" : "mitre",

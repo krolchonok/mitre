@@ -436,15 +436,30 @@
       columnGap: scaleGap(DRAWIO_LAYOUT.columnGap),
       verticalGap: scaleGap(DRAWIO_LAYOUT.verticalGap),
       subAccentWidth: scaleGap(DRAWIO_LAYOUT.subAccentWidth),
+      // headerHeight stays raw on purpose: computeMitreHeaderHeight already
+      // scales it by the header font's own ratio, so scaling it here too
+      // would apply the type scale twice.
       headerHeight: isFstecMode
         ? DRAWIO_LAYOUT.headerHeight + 40
         : DRAWIO_LAYOUT.headerHeight,
-      techniqueBaseHeight: isFstecMode
-        ? DRAWIO_LAYOUT.techniqueBaseHeight + 30
-        : DRAWIO_LAYOUT.techniqueBaseHeight,
-      subTechniqueBaseHeight: isFstecMode
-        ? DRAWIO_LAYOUT.subTechniqueBaseHeight + 18
-        : DRAWIO_LAYOUT.subTechniqueBaseHeight,
+      // Card floors belong to the type scale as well. Left absolute, a 64px
+      // floor outran the text it was meant to hold: at a 12px font a card
+      // needs ~49px, so every card carried ~30% dead space, a third fewer
+      // cards fit the sheet, and the fitter answered by shrinking the font
+      // — the opposite of what the floor was for. Scaling them is what
+      // computeCellSize's "floor is the height of a single line at this
+      // font" comment already assumed was happening. At the default 20px
+      // font gapRatio is 1, so nothing changes there.
+      techniqueBaseHeight: scaleGap(
+        isFstecMode
+          ? DRAWIO_LAYOUT.techniqueBaseHeight + 30
+          : DRAWIO_LAYOUT.techniqueBaseHeight
+      ),
+      subTechniqueBaseHeight: scaleGap(
+        isFstecMode
+          ? DRAWIO_LAYOUT.subTechniqueBaseHeight + 18
+          : DRAWIO_LAYOUT.subTechniqueBaseHeight
+      ),
     };
     const opts = {
       useGreen,
@@ -614,16 +629,24 @@
     };
   }
 
-  // Calculates optimal layout parameters (column width, font sizes)
-  // to fit the chosen sheet format (A4/A3) in a single row ("в одну строку")
-  // guaranteeing large, crystal-clear readable font sizes for any selection size.
+  // Picks the layout settings that put the LARGEST POSSIBLE TEXT on the
+  // sheet. The quantity to maximise is the font the reader actually sees,
+  // which is the nominal font size AFTER the page fit scales the diagram:
   //
-  // The objective is a plain, checkable rule instead of a weighted score:
-  // try font sizes largest first, and the first one that fits the sheet
-  // with zero shrinking (scale >= 1) wins outright — nothing smaller in
-  // the list could ever beat a font that didn't need to shrink at all. Only
-  // if no font size fits cleanly do we fall back to whichever (font,
-  // width) leaves the largest *effective* font size after shrinking.
+  //     effective font = fontSize * scale
+  //
+  // That product is the whole objective, and it is not monotonic in
+  // fontSize: a smaller nominal font produces a more compact diagram,
+  // which the fitter can then upscale further, so it can land visibly
+  // LARGER on paper than a bigger nominal font that had to be shrunk.
+  // (Measured on an 8-tactic selection: 13px at scale 1.385 = 18.0
+  // effective, beating 16px at scale 1.052 = 16.8.)
+  //
+  // Two earlier rules got this wrong and both produced needlessly small
+  // text: a weighted score mixing width/area/scale terms, and then "the
+  // first combination that fits without shrinking wins", which stopped the
+  // scan at its first hit instead of finding the maximum. The grid is
+  // small enough to simply evaluate in full and take the best.
   function autoFitLayout(selection, options = {}) {
     if (!selection || !selection.length) return null;
 
@@ -634,28 +657,19 @@
     const greenSubtechniques = options.greenSubtechniques || new Set();
 
     const orientation = options.orientation || "landscape";
-    const flow = options.flow || "single";
+    const flow = options.flow || "auto";
 
-    const fontSizes = [22, 20, 18, 16, 15, 14, 13, 12];
+    const fontSizes = [26, 24, 22, 20, 18, 16, 14, 12];
     const widths = [200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 440, 480];
-    const MIN_LEGIBLE_EFFECTIVE_FONT = 10;
+    // Comfortable print size; below this we would rather move up a sheet.
+    const LEGIBLE_TARGET = 12;
+    // Absolute floor: under this, fitting the page isn't worth the text.
+    const MIN_LEGIBLE = 10;
 
-    const buildCandidate = (targetSize, fontSize, headerFontSize, titleFontSize, res) => ({
-      size: targetSize,
-      orientation,
-      flow,
-      columnWidth: res.columnWidth,
-      fontSize,
-      headerFontSize,
-      titleFontSize,
-      equalizeHeight: false,
-      allowUpscale: true,
-    });
-
-    // Try A4, then A3 to find a sheet size that preserves large legible text.
-    for (const targetSize of ["a4", "a3"]) {
-      let bestShrunk = null;
-      let bestEffectiveFont = -Infinity;
+    // Full sweep of the (font, width) grid for one sheet, returning the
+    // combination with the largest effective font.
+    const searchSheet = (targetSize) => {
+      let best = null;
 
       for (const fontSize of fontSizes) {
         const headerFontSize = clampHeaderFontSize(fontSize * 1.33);
@@ -684,27 +698,55 @@
             equalizeHeight: false,
           });
 
-          if (res.scale >= 1) {
-            // Fits at full size untouched. Widths are tried narrowest
-            // first, so this is the tightest fit at the largest font that
-            // needed no shrinking — nothing left to search beats it.
-            return buildCandidate(targetSize, fontSize, headerFontSize, titleFontSize, res);
-          }
-
           const effectiveFont = fontSize * res.scale;
-          if (effectiveFont > bestEffectiveFont && effectiveFont >= MIN_LEGIBLE_EFFECTIVE_FONT) {
-            bestEffectiveFont = effectiveFont;
-            bestShrunk = buildCandidate(targetSize, fontSize, headerFontSize, titleFontSize, res);
-          }
+          if (best && effectiveFont <= best.effectiveFont) continue;
+
+          best = {
+            effectiveFont,
+            settings: {
+              size: targetSize,
+              orientation,
+              flow,
+              // The width fed IN, deliberately not res.columnWidth:
+              // computeLayout scales a requested width by the font ratio
+              // internally, so handing back its already-scaled output
+              // would scale it a second time when these settings are
+              // applied, and the applied layout would not reproduce the
+              // one measured here.
+              columnWidth,
+              fontSize,
+              headerFontSize,
+              titleFontSize,
+              equalizeHeight: false,
+              allowUpscale: true,
+            },
+          };
         }
       }
 
-      if (bestShrunk) return bestShrunk;
+      return best;
+    };
+
+    // An explicitly chosen sheet is honoured as-is — the user picked it.
+    // Only when no preference was expressed ("Без подгонки") do we choose
+    // the paper too: prefer A4, stepping up to A3 only when A4 cannot hold
+    // comfortably legible text.
+    if (options.size && options.size !== "none") {
+      const only = searchSheet(options.size);
+      if (only) return only.settings;
+    } else {
+      const a4 = searchSheet("a4");
+      if (a4 && a4.effectiveFont >= LEGIBLE_TARGET) return a4.settings;
+
+      const a3 = searchSheet("a3");
+      const better =
+        a3 && (!a4 || a3.effectiveFont > a4.effectiveFont) ? a3 : a4;
+      if (better && better.effectiveFont >= MIN_LEGIBLE) return better.settings;
     }
 
-    // Nothing reaches even a legible shrink on A4 or A3 (very large
+    // Nothing reaches even a legible size on paper (very large
     // selections): keep the schema at full natural size rather than print
-    // unreadable micro-text — huge, bold, and readable beats "fits the page".
+    // unreadable micro-text — large and readable beats "fits the page".
     return {
       size: "none",
       orientation,

@@ -5,7 +5,7 @@
   Mitre.config = {
     DRAWIO_LAYOUT: {
       originX: 40,
-      originY: 140,
+      originY: 40,
       columnWidth: 300,
       minColumnWidth: 140,
       maxColumnWidth: 800,
