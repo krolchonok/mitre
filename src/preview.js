@@ -441,6 +441,10 @@
 
   function renderTacticCard(tactic, isFstecMode, scale = 1, F) {
     const fs = (px) => Math.max(1, px * scale);
+    const padX = Math.max(4, Math.round(18 * scale));
+    const padY = Math.max(2, Math.round(6 * scale));
+    const step = Math.max(3, Math.round(10 * scale));
+
     const card = document.createElement("div");
     card.className = "preview-card preview-tactic";
     card.style.left = `${tactic.x}px`;
@@ -448,6 +452,8 @@
     card.style.width = `${tactic.width}px`;
     card.style.height = `${tactic.height}px`;
     card.style.backgroundColor = tactic.fillColor;
+    card.style.padding = `${padY}px ${padX}px`;
+    card.style.clipPath = `polygon(0 0, calc(100% - ${step}px) 0, 100% 50%, calc(100% - ${step}px) 100%, 0 100%, ${step}px 50%)`;
 
     card.innerHTML = isFstecMode
       ? `<div style="line-height: 130%; font-size: ${fs(F.tacticName)}px;">${tactic.name}</div><div style="font-size: ${fs(F.tacticCode)}px; opacity: 0.85; margin-top: 4px;">${tactic.code}</div>`

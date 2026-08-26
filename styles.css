@@ -1288,23 +1288,12 @@ input[type="range"]::-moz-range-thumb {
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 6px 24px;
   font-weight: bold;
   color: #ffffff;
   border-radius: 0;
-  /* mxGraph breaks over-long words in its labels; without the same rule a
-     word wider than the column escaped the chevron and got clipped. */
   overflow-wrap: normal;
   word-break: normal;
   white-space: normal;
-  clip-path: polygon(
-    0 0,
-    calc(100% - 10px) 0,
-    100% 50%,
-    calc(100% - 10px) 100%,
-    0 100%,
-    10px 50%
-  );
 }
 
 .preview-technique,

@@ -93,16 +93,19 @@
     // whiteSpace=wrap only breaks at spaces, so without this the label
     // stayed on one line and ran past the shape instead of wrapping —
     // most visibly past the tactic header's chevron point.
-    const WRAP = "overflow-wrap:anywhere;word-break:break-word;";
+    const WRAP = "overflow-wrap:normal;word-break:normal;";
+
+    const padX = Math.max(2, Math.round(18 * scale));
+    const stepSize = Math.max(2, Math.round(10 * scale));
 
     columns.forEach((tactic) => {
       const tacticLabel = isFstecMode
         ? `<div style="line-height: 130%;${WRAP}"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name}</font></div><div style="font-size: ${fs(F.tacticCode)}px;${WRAP}">${tactic.code}</div>`
-        : `<div style="line-height: 100%;${WRAP}"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name} ${tactic.code}</font></div>`;
+        : `<div style="line-height: 110%;${WRAP}"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name} ${tactic.code}</font></div>`;
 
       createCell({
         value: tacticLabel,
-        style: `${STYLES.tactic}fillColor=${tactic.fillColor};fontSize=${fs(F.tacticStyle)};`,
+        style: `${STYLES.tactic}fillColor=${tactic.fillColor};fontSize=${fs(F.tacticStyle)};size=${stepSize};spacingRight=${padX};spacingLeft=${padX};`,
         geometry: {
           x: String(tactic.x),
           y: String(tactic.y),
