@@ -13,8 +13,7 @@
     clampHeaderFontSize,
     clampTitleFontSize,
   } = Mitre.utils;
-  const { computeFstecColumnWidths, computeMaxFstecHeaderHeight } =
-    Mitre.fstec;
+  const { computeFstecColumnWidths } = Mitre.fstec;
 
   const RECON_TACTIC_CODE = "TA0043";
 
@@ -81,7 +80,21 @@
       .slice()
       .sort((a, b) => compareCodes(a.code, b.code))
       .map((technique) => {
-        const techHeight = cell.techniqueHeight;
+        // MITRE keeps one uniform cell height so the grid reads as a
+        // regular matrix: its technique names are short and of similar
+        // length, so the waste is negligible. ФСТЭК measures are whole
+        // paragraphs ranging from ~50 to ~350 characters, and forcing all
+        // of them to the tallest one's height left roughly a third of the
+        // sheet as blank card padding — which the page fitter then paid
+        // for by shrinking the font. There each card takes its own height.
+        const techHeight = opts.isFstecMode
+          ? computeCardHeight(
+              technique.name,
+              layout.techniqueBaseHeight,
+              columnWidth,
+              cell.measure
+            )
+          : cell.techniqueHeight;
         const isGreen =
           useGreen &&
           technique.code &&
@@ -197,14 +210,30 @@
       });
     });
 
-    return { techniqueHeight, subtechniqueHeight };
+    // `measure` is handed back so ФСТЭК columns can size each card to its
+    // own text instead of taking the uniform height (see buildColumn).
+    return { techniqueHeight, subtechniqueHeight, measure: compact };
   }
 
   // Tactic headers share one height too, taken from whichever label needs the
   // most lines at this width. Without it the header stays at its 40px default
   // and long tactic names spill out of the chevron as soon as columns narrow.
   // The step shape's arrow point eats horizontal room, hence the wider padding.
-  function computeMitreHeaderHeight(selection, columnWidth, layout, headerFont) {
+  // Both modes measure the real glyphs at the real header font. The ФСТЭК
+  // branch used to have its own height function that hardcoded a 14px font
+  // and counted lines by dividing character count by an average character
+  // width — so headers were sized for 14px text and then rendered at the
+  // chosen header size (26px+), which clipped every category label that
+  // needed more than one line. ФСТЭК differs only in shape: the name wraps
+  // on its own and the code sits on a separate, slightly smaller line
+  // below, instead of MITRE's single "name code" line.
+  function computeHeaderHeight(
+    selection,
+    columnWidth,
+    layout,
+    headerFont,
+    isFstecMode
+  ) {
     const lineHeight = Math.round(headerFont * 1.25);
     // Floor tracks the header font for the same reason the cell floor does.
     const floor = Math.round(
@@ -212,26 +241,28 @@
     );
     const padX = Math.round(18 * (headerFont / DRAWIO_LAYOUT.headerFontSize));
     const usable = Math.max(columnWidth - padX * 2, 20);
+    // Matches the code line the ФСТЭК renderers emit at headerFont - 2.
+    const codeLineHeight = isFstecMode
+      ? Math.round(Math.max(8, headerFont - 2) * 1.3)
+      : 0;
+
     return selection.reduce((tallest, tactic) => {
-      const lines = countWrappedLines(
-        `${tactic.name} ${tactic.code}`,
-        usable,
-        headerFont,
-        "bold"
-      );
-      return Math.max(tallest, lines * lineHeight + 16);
+      const label = isFstecMode
+        ? tactic.name || ""
+        : `${tactic.name} ${tactic.code}`;
+      const lines = countWrappedLines(label, usable, headerFont, "bold");
+      return Math.max(tallest, lines * lineHeight + codeLineHeight + 16);
     }, floor);
   }
 
   function buildAllColumns(selection, columnWidth, layout, opts) {
-    const headerHeight = opts.isFstecMode
-      ? computeMaxFstecHeaderHeight(selection, columnWidth, layout)
-      : computeMitreHeaderHeight(
-          selection,
-          columnWidth,
-          layout,
-          opts.headerFontSize
-        );
+    const headerHeight = computeHeaderHeight(
+      selection,
+      columnWidth,
+      layout,
+      opts.headerFontSize,
+      opts.isFstecMode
+    );
     const cell = computeCellSize(selection, columnWidth, layout, opts);
     return selection.map((tactic) =>
       buildColumn(tactic, columnWidth, headerHeight, layout, opts, cell)
@@ -505,7 +536,11 @@
       const naturalWidth =
         requestedWidth ||
         (isFstecMode
-          ? computeFstecColumnWidths(selection, layout)[0] || layout.columnWidth
+          ? computeFstecColumnWidths(selection, layout, {
+              fontSize,
+              headerFontSize,
+              titleFontSize,
+            })[0] || layout.columnWidth
           : layout.columnWidth);
       const built = buildAllColumns(selection, naturalWidth, layout, opts);
       const perRow = options.perRow || (options.pageFit?.flow === "multi" ? Math.min(5, built.length) : built.length);

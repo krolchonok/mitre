@@ -145,6 +145,17 @@
     const padX = Math.max(2, Math.round(14 * scale));
     const stepSize = Math.max(2, Math.round(10 * scale));
 
+    // Same reason the preview scales its card padding: STYLES.technique's
+    // spacingLeft/Right are absolute, so on a scaled-down diagram they take
+    // a bigger share of the card than computeCardHeight budgeted for and
+    // drawio rewraps the label onto more lines than the cell can hold.
+    // These come last in the style string, so they win over the defaults.
+    const cellPadX = Math.max(1, Math.round((isFstecMode ? 8 : 12) * scale));
+    const cellPadY = Math.max(1, Math.round((isFstecMode ? 5 : 8) * scale));
+    const cellSpacing =
+      `spacingLeft=${cellPadX};spacingRight=${cellPadX};` +
+      `spacingTop=${cellPadY};spacingBottom=${cellPadY};`;
+
     columns.forEach((tactic) => {
       const fontHeader = Mitre.utils.fitTacticHeaderFont(
         tactic.name,
@@ -181,7 +192,7 @@
 
         createCell({
           value: techniqueValue,
-          style: `${STYLES.technique}fillColor=${technique.fill};fontSize=${fs(F.techniqueStyle)};`,
+          style: `${STYLES.technique}fillColor=${technique.fill};fontSize=${fs(F.techniqueStyle)};${cellSpacing}`,
           geometry: {
             x: String(technique.x),
             y: String(technique.y),
@@ -195,7 +206,7 @@
 
           createCell({
             value: subValue,
-            style: `${STYLES.subtech}fillColor=${sub.fill};fontSize=${fs(F.subStyle)};`,
+            style: `${STYLES.subtech}fillColor=${sub.fill};fontSize=${fs(F.subStyle)};${cellSpacing}`,
             geometry: {
               x: String(sub.x),
               y: String(sub.y),

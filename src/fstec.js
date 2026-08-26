@@ -1,8 +1,7 @@
 (function () {
   "use strict";
   const Mitre = (window.Mitre = window.Mitre || {});
-  const { normalizeMitreCode, estimateTextWidth, estimateCharsPerLine } =
-    Mitre.utils;
+  const { normalizeMitreCode, estimateTextWidth } = Mitre.utils;
 
   function buildFstecLookup(entries) {
     const map = new Map();
@@ -104,19 +103,31 @@
     };
   }
 
-  function computeFstecColumnWidths(selection, layout) {
+  // Fonts come from the caller's settings. They used to be hardcoded to
+  // 12/13/14 here, so the natural column width was computed for text far
+  // smaller than what actually got rendered.
+  function computeFstecColumnWidths(selection, layout, fonts = {}) {
+    const {
+      fontSize = 12,
+      headerFontSize = 14,
+      titleFontSize = 13,
+    } = fonts;
     const minWidth = layout.columnWidth;
     const maxWidth = layout.maxColumnWidth || layout.columnWidth;
 
     const widths = selection.map((tactic) => {
       const candidateWidths = [];
-      candidateWidths.push(estimateTextWidth(tactic.name || "", 14));
-      candidateWidths.push(estimateTextWidth(tactic.code || "", 12));
+      candidateWidths.push(
+        estimateTextWidth(tactic.name || "", headerFontSize, "bold")
+      );
+      candidateWidths.push(
+        estimateTextWidth(tactic.code || "", Math.max(8, headerFontSize - 2))
+      );
 
       (tactic.techniques || []).forEach((technique) => {
-        candidateWidths.push(estimateTextWidth(technique.name || "", 12));
+        candidateWidths.push(estimateTextWidth(technique.name || "", fontSize));
         candidateWidths.push(
-          estimateTextWidth(technique.code || "", 13, "bold")
+          estimateTextWidth(technique.code || "", titleFontSize, "bold")
         );
       });
 
@@ -131,26 +142,11 @@
     return selection.map(() => targetWidth);
   }
 
-  function computeFstecHeaderHeight(tacticName, columnWidth, layout) {
-    const baseHeight = layout.headerHeight;
-    const charsPerLine = estimateCharsPerLine(columnWidth, 14, 32);
-    const lines = Math.max(
-      1,
-      Math.ceil((tacticName || "").length / charsPerLine)
-    );
-    const lineHeight = Math.round(14 * 1.3);
-    const codeLineHeight = 16;
-    const padding = 18;
-    const neededHeight = lines * lineHeight + codeLineHeight + padding;
-    return Math.max(baseHeight, neededHeight);
-  }
-
-  function computeMaxFstecHeaderHeight(selection, columnWidth, layout) {
-    return selection.reduce((maxHeight, tactic) => {
-      const h = computeFstecHeaderHeight(tactic.name, columnWidth, layout);
-      return Math.max(maxHeight, h);
-    }, layout.headerHeight);
-  }
+  // Header height for both modes now lives in layout.js's
+  // computeHeaderHeight, which measures real glyphs at the real header
+  // font. The ФСТЭК-specific versions that used to live here sized headers
+  // for a hardcoded 14px font using a character-count estimate, which
+  // clipped category labels once the header font was raised.
 
   Mitre.fstec = {
     FSTEC_CATEGORY_TITLES,
@@ -160,7 +156,5 @@
     collectSelectedMitreCodes,
     buildFstecSelectionFromSelection,
     computeFstecColumnWidths,
-    computeFstecHeaderHeight,
-    computeMaxFstecHeaderHeight,
   };
 })();

@@ -439,14 +439,30 @@
     return card;
   }
 
+  // computeCardHeight decides how many lines a name wraps to after
+  // subtracting this much padding per side, so the rendered padding has to
+  // be exactly that — scaled, like everything else. The stylesheet's flat
+  // 4px/8px is absolute, so at a small scale it ate a far bigger share of
+  // the shrunken card than the model allowed for: text rewrapped onto more
+  // lines than the card was built for and spilled out. Worst in ФСТЭК mode,
+  // whose names are full sentences, so the per-line error compounds.
+  function cardPadding(scale, compact) {
+    return {
+      x: (compact ? 8 : 12) * scale,
+      y: (compact ? 5 : 8) * scale,
+    };
+  }
+
   function renderTechniqueCard(technique, isFstecMode, scale = 1, F) {
     const fs = (px) => Math.max(1, px * scale);
+    const pad = cardPadding(scale, isFstecMode);
     const card = document.createElement("div");
     card.className = "preview-card preview-technique";
     card.style.left = `${technique.x}px`;
     card.style.top = `${technique.y}px`;
     card.style.width = `${technique.width}px`;
     card.style.height = `${technique.height}px`;
+    card.style.padding = `${pad.y}px ${pad.x}px`;
     card.style.backgroundColor = technique.fill;
 
     card.innerHTML = isFstecMode
@@ -458,12 +474,15 @@
 
   function renderSubtechCard(sub, scale = 1, F) {
     const fs = (px) => Math.max(1, px * scale);
+    // Subtechniques only exist in MITRE mode, so never the compact padding.
+    const pad = cardPadding(scale, false);
     const card = document.createElement("div");
     card.className = "preview-card preview-subtech";
     card.style.left = `${sub.x}px`;
     card.style.top = `${sub.y}px`;
     card.style.width = `${sub.width}px`;
     card.style.height = `${sub.height}px`;
+    card.style.padding = `${pad.y}px ${pad.x}px`;
     card.style.backgroundColor = sub.fill;
     card.innerHTML = `<div style="font-size: ${fs(F.subCode)}px;"><b>${sub.code}</b></div><div style="font-size: ${fs(F.subName)}px; line-height: 1.15; margin-top: 1px;">${sub.name}</div>`;
     return card;
