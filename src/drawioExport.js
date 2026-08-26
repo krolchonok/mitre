@@ -99,7 +99,7 @@
     const stepSize = Math.max(2, Math.round(10 * scale));
 
     columns.forEach((tactic) => {
-      const fontHeader = fitTacticHeaderFont(
+      const fontHeader = Mitre.utils.fitTacticHeaderFont(
         tactic.name,
         tactic.code,
         tactic.width,
