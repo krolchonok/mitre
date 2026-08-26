@@ -368,40 +368,42 @@
       result.titleFontSize
     );
     const showSheet = s.size !== "none";
+    const unscale = scale > 0 ? 1 / scale : 1;
 
     // Canvas is the sheet when one is chosen, otherwise the diagram itself.
-    const canvasW = showSheet ? pageWidth : bounds.width;
-    const canvasH = showSheet ? pageHeight : bounds.height;
+    const canvasW = showSheet ? pageWidth : bounds.width * unscale;
+    const canvasH = showSheet ? pageHeight : bounds.height * unscale;
 
-    // Zoom the whole thing down so the full sheet is visible at once —
-    // that is the point of a fit preview.
+    // Zoom down so the full sheet is visible at once
     const viewW = previewWorkspace.clientWidth - 24;
     const viewH = previewWorkspace.clientHeight - 24;
-    const zoom = Math.min(1, viewW / canvasW, viewH / canvasH);
+    const zoom = Math.min(1, viewW / (canvasW * scale), viewH / (canvasH * scale));
+    const totalScale = zoom * scale;
 
     const stage = document.createElement("div");
     stage.className = "preview-stage";
     stage.style.width = `${canvasW}px`;
     stage.style.height = `${canvasH}px`;
-    stage.style.transform = `scale(${zoom})`;
+    stage.style.transform = `scale(${totalScale})`;
+    stage.style.transformOrigin = "0 0";
 
     if (showSheet) stage.classList.add("is-sheet");
 
     columns.forEach((tactic) => {
-      stage.appendChild(renderTacticCard(tactic, isFstecMode, scale, F));
+      stage.appendChild(renderTacticCard(tactic, isFstecMode, unscale, F));
       tactic.techniques.forEach((technique) => {
-        stage.appendChild(renderTechniqueCard(technique, isFstecMode, scale, F));
+        stage.appendChild(renderTechniqueCard(technique, isFstecMode, unscale, F));
         technique.subtechniques.forEach((sub) => {
-          stage.appendChild(renderSubtechCard(sub, scale, F));
-          stage.appendChild(renderSubtechAccent(sub));
+          stage.appendChild(renderSubtechCard(sub, unscale, F));
+          stage.appendChild(renderSubtechAccent(sub, unscale));
         });
       });
     });
 
     const holder = document.createElement("div");
     holder.className = "preview-stage-holder";
-    holder.style.width = `${canvasW * zoom}px`;
-    holder.style.height = `${canvasH * zoom}px`;
+    holder.style.width = `${canvasW * totalScale}px`;
+    holder.style.height = `${canvasH * totalScale}px`;
     holder.appendChild(stage);
     previewWorkspace.appendChild(holder);
 
@@ -439,60 +441,57 @@
       (result.scale < 0.35 ? " · текст будет нечитаем при печати" : "");
   }
 
-  function renderTacticCard(tactic, isFstecMode, scale = 1, F) {
-    const fs = (px) => Math.max(1, px * scale);
+  function renderTacticCard(tactic, isFstecMode, unscale = 1, F) {
     const card = document.createElement("div");
     card.className = "preview-card preview-tactic";
-    card.style.left = `${tactic.x}px`;
-    card.style.top = `${tactic.y}px`;
-    card.style.width = `${tactic.width}px`;
-    card.style.height = `${tactic.height}px`;
+    card.style.left = `${tactic.x * unscale}px`;
+    card.style.top = `${tactic.y * unscale}px`;
+    card.style.width = `${tactic.width * unscale}px`;
+    card.style.height = `${tactic.height * unscale}px`;
     card.style.backgroundColor = tactic.fillColor;
 
     card.innerHTML = isFstecMode
-      ? `<div style="line-height: 130%; font-size: ${fs(F.tacticName)}px;">${tactic.name}</div><div style="font-size: ${fs(F.tacticCode)}px; opacity: 0.85; margin-top: 4px;">${tactic.code}</div>`
-      : `<div style="line-height: 110%; font-size: ${fs(F.tacticName)}px; font-weight: bold;">${tactic.name} ${tactic.code}</div>`;
+      ? `<div style="line-height: 130%; font-size: ${F.tacticName}px;">${tactic.name}</div><div style="font-size: ${F.tacticCode}px; opacity: 0.85; margin-top: 4px;">${tactic.code}</div>`
+      : `<div style="line-height: 110%; font-size: ${F.tacticName}px; font-weight: bold;">${tactic.name} ${tactic.code}</div>`;
 
     return card;
   }
 
-  function renderTechniqueCard(technique, isFstecMode, scale = 1, F) {
-    const fs = (px) => Math.max(1, px * scale);
+  function renderTechniqueCard(technique, isFstecMode, unscale = 1, F) {
     const card = document.createElement("div");
     card.className = "preview-card preview-technique";
-    card.style.left = `${technique.x}px`;
-    card.style.top = `${technique.y}px`;
-    card.style.width = `${technique.width}px`;
-    card.style.height = `${technique.height}px`;
+    card.style.left = `${technique.x * unscale}px`;
+    card.style.top = `${technique.y * unscale}px`;
+    card.style.width = `${technique.width * unscale}px`;
+    card.style.height = `${technique.height * unscale}px`;
     card.style.backgroundColor = technique.fill;
 
     card.innerHTML = isFstecMode
-      ? `<div style="font-size: ${fs(F.techniqueCode)}px; font-weight: bold;">${technique.code || ""}</div><div style="font-size: ${fs(F.techniqueName)}px; line-height: 1.15; margin-top: 2px;">${technique.name}</div>`
-      : `<div style="font-size: ${fs(F.techniqueCode)}px;"><b>${technique.code}</b></div><div style="font-size: ${fs(F.techniqueName)}px; margin-top: 2px; line-height: 1.15;">${technique.name}</div>`;
+      ? `<div style="font-size: ${F.techniqueCode}px; font-weight: bold;">${technique.code || ""}</div><div style="font-size: ${F.techniqueName}px; line-height: 1.15; margin-top: 2px;">${technique.name}</div>`
+      : `<div style="font-size: ${F.techniqueCode}px;"><b>${technique.code}</b></div><div style="font-size: ${F.techniqueName}px; margin-top: 2px; line-height: 1.15;">${technique.name}</div>`;
 
     return card;
   }
 
-  function renderSubtechCard(sub, scale = 1, F) {
-    const fs = (px) => Math.max(1, px * scale);
+  function renderSubtechCard(sub, unscale = 1, F) {
     const card = document.createElement("div");
     card.className = "preview-card preview-subtech";
-    card.style.left = `${sub.x}px`;
-    card.style.top = `${sub.y}px`;
-    card.style.width = `${sub.width}px`;
-    card.style.height = `${sub.height}px`;
+    card.style.left = `${sub.x * unscale}px`;
+    card.style.top = `${sub.y * unscale}px`;
+    card.style.width = `${sub.width * unscale}px`;
+    card.style.height = `${sub.height * unscale}px`;
     card.style.backgroundColor = sub.fill;
-    card.innerHTML = `<div style="font-size: ${fs(F.subCode)}px;"><b>${sub.code}</b></div><div style="font-size: ${fs(F.subName)}px; line-height: 1.15; margin-top: 1px;">${sub.name}</div>`;
+    card.innerHTML = `<div style="font-size: ${F.subCode}px;"><b>${sub.code}</b></div><div style="font-size: ${F.subName}px; line-height: 1.15; margin-top: 1px;">${sub.name}</div>`;
     return card;
   }
 
-  function renderSubtechAccent(sub) {
+  function renderSubtechAccent(sub, unscale = 1) {
     const bar = document.createElement("div");
     bar.className = "preview-subtech-accent";
-    bar.style.left = `${sub.accentX}px`;
-    bar.style.top = `${sub.y}px`;
-    bar.style.width = `${sub.accentWidth}px`;
-    bar.style.height = `${sub.height}px`;
+    bar.style.left = `${sub.accentX * unscale}px`;
+    bar.style.top = `${sub.y * unscale}px`;
+    bar.style.width = `${sub.accentWidth * unscale}px`;
+    bar.style.height = `${sub.height * unscale}px`;
     bar.style.backgroundColor = sub.accent;
     return bar;
   }
