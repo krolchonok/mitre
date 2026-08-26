@@ -592,9 +592,9 @@
     };
   }
 
-  // Calculates optimal layout parameters (column width, font sizes, flow, height equalization)
-  // to fill the chosen sheet format (A4/A3) as much as possible while maintaining readability
-  // and ensuring uniform tile width and height across all cards.
+  // Calculates optimal layout parameters (column width, font sizes, height equalization)
+  // to fill the chosen sheet format (A4/A3) as much as possible in a single row ("в одну строку"),
+  // while maintaining maximum readable text and uniform tile width and height.
   function autoFitLayout(selection, options = {}) {
     if (!selection || !selection.length) return null;
 
@@ -608,71 +608,65 @@
       size = "a4";
     }
     const orientation = options.orientation || "landscape";
+    const flow = "single";
 
-    const flows = ["auto", "single"];
     const equalizes = [true, false];
     const fontSizes = [9, 10, 11, 12, 13, 14, 16, 18, 20];
-    const widths = [150, 170, 190, 210, 230, 250, 280, 310, 350, 400, 450];
+    const widths = [120, 140, 150, 160, 180, 200, 220, 240, 260, 280, 300];
 
     let bestCandidate = null;
     let bestScore = -Infinity;
 
-    for (const flow of flows) {
-      for (const equalizeHeight of equalizes) {
-        for (const fontSize of fontSizes) {
-          const headerFontSize = Math.min(
-            DRAWIO_LAYOUT.maxHeaderFontSize,
-            Math.max(DRAWIO_LAYOUT.minHeaderFontSize, Math.round(fontSize * 1.33))
-          );
-          const titleFontSize = Math.min(
-            DRAWIO_LAYOUT.maxTitleFontSize,
-            Math.max(DRAWIO_LAYOUT.minTitleFontSize, Math.round(fontSize * 1.15))
-          );
+    for (const equalizeHeight of equalizes) {
+      for (const fontSize of fontSizes) {
+        const headerFontSize = Math.min(
+          DRAWIO_LAYOUT.maxHeaderFontSize,
+          Math.max(DRAWIO_LAYOUT.minHeaderFontSize, Math.round(fontSize * 1.33))
+        );
+        const titleFontSize = Math.min(
+          DRAWIO_LAYOUT.maxTitleFontSize,
+          Math.max(DRAWIO_LAYOUT.minTitleFontSize, Math.round(fontSize * 1.15))
+        );
 
-          for (const columnWidth of widths) {
-            const res = computeLayout(selection, {
-              mode,
-              useGreen,
-              greenTechniques,
-              greenSubtechniques,
-              pageFit: { size, orientation, flow },
-              columnWidth,
+        for (const columnWidth of widths) {
+          const res = computeLayout(selection, {
+            mode,
+            useGreen,
+            greenTechniques,
+            greenSubtechniques,
+            pageFit: { size, orientation, flow },
+            columnWidth,
+            fontSize,
+            headerFontSize,
+            titleFontSize,
+            widthMode: "auto",
+            allowUpscale: true,
+            equalizeHeight,
+          });
+
+          const effectiveFont = fontSize * res.scale;
+          const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
+          const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
+          const areaCoverage = widthRatio * heightRatio;
+
+          // Single row scoring: prioritize scale, height fill, area coverage and readable text
+          let score = res.scale * 1000 + heightRatio * 600 + effectiveFont * 40 + areaCoverage * 300;
+
+          if (equalizeHeight) score += 30;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestCandidate = {
+              size,
+              orientation,
+              flow,
+              columnWidth: res.columnWidth,
               fontSize,
               headerFontSize,
               titleFontSize,
-              widthMode: "auto",
-              allowUpscale: false,
               equalizeHeight,
-            });
-
-            const effectiveFont = fontSize * res.scale;
-            if (effectiveFont < 5.0) continue;
-
-            const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
-            const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
-            const areaCoverage = widthRatio * heightRatio;
-
-            // Score calculation: prioritize page fill area, high scale factor, and font legibility
-            let score = areaCoverage * 600 + res.scale * 400 + effectiveFont * 35;
-
-            if (res.scale >= 0.90) score += 200;
-            if (effectiveFont < 8.0) score -= (8.0 - effectiveFont) * 50;
-            if (equalizeHeight && res.perRow < selection.length) score += 40;
-
-            if (score > bestScore) {
-              bestScore = score;
-              bestCandidate = {
-                size,
-                orientation,
-                flow,
-                columnWidth,
-                fontSize,
-                headerFontSize,
-                titleFontSize,
-                equalizeHeight,
-                allowUpscale: false,
-              };
-            }
+              allowUpscale: true,
+            };
           }
         }
       }
