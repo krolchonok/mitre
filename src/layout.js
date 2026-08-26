@@ -595,7 +595,7 @@
 
   // Calculates optimal layout parameters (column width, font sizes)
   // to fit the chosen sheet format (A4/A3) in a single row ("в одну строку")
-  // guaranteeing readable cards and text that NEVER overflow card or page boundaries.
+  // maximizing font sizes and card heights as large as will possibly fit on the sheet.
   function autoFitLayout(selection, options = {}) {
     if (!selection || !selection.length) return null;
 
@@ -613,8 +613,9 @@
     const flow = options.flow || "single";
     const equalizeHeight = false;
 
-    const fontSizes = [9, 10, 11, 12, 13, 14, 16, 18, 20];
-    const widths = [120, 140, 150, 160, 180, 200, 220, 240, 260, 280];
+    // Test font sizes from large (24px) down to 9px to maximize readable font and card height
+    const fontSizes = [24, 22, 20, 18, 16, 15, 14, 13, 12, 11, 10, 9];
+    const widths = [120, 140, 150, 160, 180, 200, 220, 240, 260, 280, 300];
 
     let bestCandidate = null;
     let bestScore = -Infinity;
@@ -648,7 +649,7 @@
           headerFontSize,
           titleFontSize,
           widthMode: "auto",
-          allowUpscale: false,
+          allowUpscale: true,
           equalizeHeight: false,
         });
 
@@ -657,11 +658,13 @@
 
         const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
         const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
+        const areaFill = widthRatio * heightRatio;
 
-        // Discard extreme shrinking where card width < 50px or font < 4px, which causes text overflow
-        if (effectiveFont < 4.0 || effectiveWidth < 50) continue;
+        // Discard unreadable scaling where card width < 30px or font < 2.5px
+        if (effectiveFont < 2.5 || effectiveWidth < 30) continue;
 
-        let score = res.scale * 1000 + effectiveFont * 150 + widthRatio * 300 + heightRatio * 200;
+        // Score heavily rewards LARGEST effective printed font size and maximum page fill area
+        let score = effectiveFont * 400 + fontSize * 100 + areaFill * 800 + res.scale * 300;
 
         if (score > bestScore) {
           bestScore = score;
@@ -674,7 +677,7 @@
             headerFontSize,
             titleFontSize,
             equalizeHeight: false,
-            allowUpscale: false,
+            allowUpscale: true,
           };
         }
       }
@@ -695,7 +698,7 @@
         headerFontSize: 12,
         titleFontSize: 10,
         equalizeHeight: false,
-        allowUpscale: false,
+        allowUpscale: true,
       };
     }
 
