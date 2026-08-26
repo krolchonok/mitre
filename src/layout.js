@@ -592,9 +592,9 @@
     };
   }
 
-  // Calculates optimal layout parameters (column width, font sizes, height equalization)
-  // to fill the chosen sheet format (A4/A3) as much as possible in a single row ("в одну строку"),
-  // while maintaining maximum readable text and uniform tile width and height.
+  // Calculates optimal layout parameters (column width, font sizes)
+  // to fit the chosen sheet format (A4/A3) as much as possible in a single row ("в одну строку")
+  // with natural top alignment (without vertical gaps or vertical centering between cards).
   function autoFitLayout(selection, options = {}) {
     if (!selection || !selection.length) return null;
 
@@ -609,65 +609,60 @@
     }
     const orientation = options.orientation || "landscape";
     const flow = "single";
+    const equalizeHeight = false; // Strictly OFF: natural top alignment, no vertical card stretching or gap centering!
 
-    const equalizes = [true, false];
     const fontSizes = [9, 10, 11, 12, 13, 14, 16, 18, 20];
     const widths = [120, 140, 150, 160, 180, 200, 220, 240, 260, 280, 300];
 
     let bestCandidate = null;
     let bestScore = -Infinity;
 
-    for (const equalizeHeight of equalizes) {
-      for (const fontSize of fontSizes) {
-        const headerFontSize = Math.min(
-          DRAWIO_LAYOUT.maxHeaderFontSize,
-          Math.max(DRAWIO_LAYOUT.minHeaderFontSize, Math.round(fontSize * 1.33))
-        );
-        const titleFontSize = Math.min(
-          DRAWIO_LAYOUT.maxTitleFontSize,
-          Math.max(DRAWIO_LAYOUT.minTitleFontSize, Math.round(fontSize * 1.15))
-        );
+    for (const fontSize of fontSizes) {
+      const headerFontSize = Math.min(
+        DRAWIO_LAYOUT.maxHeaderFontSize,
+        Math.max(DRAWIO_LAYOUT.minHeaderFontSize, Math.round(fontSize * 1.33))
+      );
+      const titleFontSize = Math.min(
+        DRAWIO_LAYOUT.maxTitleFontSize,
+        Math.max(DRAWIO_LAYOUT.minTitleFontSize, Math.round(fontSize * 1.15))
+      );
 
-        for (const columnWidth of widths) {
-          const res = computeLayout(selection, {
-            mode,
-            useGreen,
-            greenTechniques,
-            greenSubtechniques,
-            pageFit: { size, orientation, flow },
-            columnWidth,
+      for (const columnWidth of widths) {
+        const res = computeLayout(selection, {
+          mode,
+          useGreen,
+          greenTechniques,
+          greenSubtechniques,
+          pageFit: { size, orientation, flow },
+          columnWidth,
+          fontSize,
+          headerFontSize,
+          titleFontSize,
+          widthMode: "auto",
+          allowUpscale: false,
+          equalizeHeight: false,
+        });
+
+        const effectiveFont = fontSize * res.scale;
+        const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
+        const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
+
+        // Scoring: maximize scale factor and text legibility with natural card stacking
+        let score = res.scale * 1000 + effectiveFont * 50 + widthRatio * 300 + heightRatio * 200;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestCandidate = {
+            size,
+            orientation,
+            flow,
+            columnWidth: res.columnWidth,
             fontSize,
             headerFontSize,
             titleFontSize,
-            widthMode: "auto",
-            allowUpscale: true,
-            equalizeHeight,
-          });
-
-          const effectiveFont = fontSize * res.scale;
-          const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
-          const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
-          const areaCoverage = widthRatio * heightRatio;
-
-          // Single row scoring: prioritize scale, height fill, area coverage and readable text
-          let score = res.scale * 1000 + heightRatio * 600 + effectiveFont * 40 + areaCoverage * 300;
-
-          if (equalizeHeight) score += 30;
-
-          if (score > bestScore) {
-            bestScore = score;
-            bestCandidate = {
-              size,
-              orientation,
-              flow,
-              columnWidth: res.columnWidth,
-              fontSize,
-              headerFontSize,
-              titleFontSize,
-              equalizeHeight,
-              allowUpscale: true,
-            };
-          }
+            equalizeHeight: false,
+            allowUpscale: false,
+          };
         }
       }
     }
