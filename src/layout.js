@@ -595,7 +595,7 @@
 
   // Calculates optimal layout parameters (column width, font sizes)
   // to fit the chosen sheet format (A4/A3) in a single row ("в одну строку")
-  // maximizing font sizes and card heights as large as will possibly fit on the sheet.
+  // guaranteeing large, crystal-clear readable font sizes for any selection size.
   function autoFitLayout(selection, options = {}) {
     if (!selection || !selection.length) return null;
 
@@ -605,104 +605,96 @@
     const greenTechniques = options.greenTechniques || new Set();
     const greenSubtechniques = options.greenSubtechniques || new Set();
 
-    let size = options.size;
-    if (!size || size === "none") {
-      size = "a4";
-    }
     const orientation = options.orientation || "landscape";
     const flow = options.flow || "single";
     const equalizeHeight = false;
 
-    // Test font sizes from large (24px) down to 9px to maximize readable font and card height
-    const fontSizes = [24, 22, 20, 18, 16, 15, 14, 13, 12, 11, 10, 9];
-    const widths = [120, 140, 150, 160, 180, 200, 220, 240, 260, 280, 300];
+    const fontSizes = [20, 18, 16, 15, 14, 13, 12];
+    const widths = [160, 180, 200, 220, 240, 260, 280];
 
-    let bestCandidate = null;
-    let bestScore = -Infinity;
+    // Try A4, then A3 to find a sheet size that preserves large legible text
+    for (const targetSize of ["a4", "a3"]) {
+      let bestCandidate = null;
+      let bestScore = -Infinity;
 
-    for (const fontSize of fontSizes) {
-      const headerFontSize = Math.min(
-        DRAWIO_LAYOUT.maxHeaderFontSize,
-        Math.max(DRAWIO_LAYOUT.minHeaderFontSize, Math.round(fontSize * 1.33))
-      );
-      const titleFontSize = Math.min(
-        DRAWIO_LAYOUT.maxTitleFontSize,
-        Math.max(DRAWIO_LAYOUT.minTitleFontSize, Math.round(fontSize * 1.15))
-      );
+      for (const fontSize of fontSizes) {
+        const headerFontSize = Math.min(
+          DRAWIO_LAYOUT.maxHeaderFontSize,
+          Math.max(DRAWIO_LAYOUT.minHeaderFontSize, Math.round(fontSize * 1.33))
+        );
+        const titleFontSize = Math.min(
+          DRAWIO_LAYOUT.maxTitleFontSize,
+          Math.max(DRAWIO_LAYOUT.minTitleFontSize, Math.round(fontSize * 1.15))
+        );
 
-      const minReqWidth = getMinRequiredColumnWidth(
-        selection,
-        fontSize,
-        isFstecMode ? 36 : 28
-      );
-
-      for (const rawWidth of widths) {
-        const columnWidth = Math.max(rawWidth, minReqWidth);
-        const res = computeLayout(selection, {
-          mode,
-          useGreen,
-          greenTechniques,
-          greenSubtechniques,
-          pageFit: { size, orientation, flow },
-          columnWidth,
+        const minReqWidth = getMinRequiredColumnWidth(
+          selection,
           fontSize,
-          headerFontSize,
-          titleFontSize,
-          widthMode: "auto",
-          allowUpscale: true,
-          equalizeHeight: false,
-        });
+          isFstecMode ? 36 : 28
+        );
 
-        const effectiveFont = fontSize * res.scale;
-        const effectiveWidth = columnWidth * res.scale;
-
-        const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
-        const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
-        const areaFill = widthRatio * heightRatio;
-
-        // Discard unreadable scaling where card width < 30px or font < 2.5px
-        if (effectiveFont < 2.5 || effectiveWidth < 30) continue;
-
-        // Score heavily rewards LARGEST effective printed font size and maximum page fill area
-        let score = effectiveFont * 400 + fontSize * 100 + areaFill * 800 + res.scale * 300;
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestCandidate = {
-            size,
-            orientation,
-            flow,
-            columnWidth: res.columnWidth,
+        for (const rawWidth of widths) {
+          const columnWidth = Math.max(rawWidth, minReqWidth);
+          const res = computeLayout(selection, {
+            mode,
+            useGreen,
+            greenTechniques,
+            greenSubtechniques,
+            pageFit: { size: targetSize, orientation, flow },
+            columnWidth,
             fontSize,
             headerFontSize,
             titleFontSize,
-            equalizeHeight: false,
+            widthMode: "auto",
             allowUpscale: true,
-          };
+            equalizeHeight: false,
+          });
+
+          const effectiveFont = fontSize * res.scale;
+          const effectiveWidth = columnWidth * res.scale;
+
+          const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
+          const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
+          const areaFill = widthRatio * heightRatio;
+
+          // DISCARD MICRO-PRINT: effective font MUST be >= 5.5px and scale >= 0.40!
+          if (effectiveFont < 5.5 || res.scale < 0.40 || effectiveWidth < 60) continue;
+
+          let score = effectiveFont * 500 + fontSize * 100 + areaFill * 800 + res.scale * 300;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestCandidate = {
+              size: targetSize,
+              orientation,
+              flow,
+              columnWidth: res.columnWidth,
+              fontSize,
+              headerFontSize,
+              titleFontSize,
+              equalizeHeight: false,
+              allowUpscale: true,
+            };
+          }
         }
       }
+
+      if (bestCandidate) return bestCandidate;
     }
 
-    // If A4 landscape cannot hold huge selection without card text overflow, auto-switch to A3 landscape
-    if (!bestCandidate && size === "a4") {
-      return autoFitLayout(selection, { ...options, size: "a3" });
-    }
-
-    if (!bestCandidate) {
-      bestCandidate = {
-        size: "a3",
-        orientation: "landscape",
-        flow: "single",
-        columnWidth: 140,
-        fontSize: 9,
-        headerFontSize: 12,
-        titleFontSize: 10,
-        equalizeHeight: false,
-        allowUpscale: true,
-      };
-    }
-
-    return bestCandidate;
+    // For massive selections (150+ subtechniques), fall back to "none" (1:1 full scale)
+    // so letters stay 100% full 13px-17px size without micro-shrinking!
+    return {
+      size: "none",
+      orientation,
+      flow,
+      columnWidth: 180,
+      fontSize: 13,
+      headerFontSize: 17,
+      titleFontSize: 15,
+      equalizeHeight: false,
+      allowUpscale: true,
+    };
   }
 
   Mitre.layout = { computeLayout, autoFitLayout };
