@@ -234,8 +234,8 @@
     const floor = Math.round(
       (layout.headerHeight * headerFont) / DRAWIO_LAYOUT.headerFontSize
     );
-    // Matches spacingLeft + spacingRight on the tactic style (18 + 18).
-    const usable = Math.max(columnWidth - 36, 20);
+    // Matches spacingLeft + spacingRight on the tactic style (24 + 24).
+    const usable = Math.max(columnWidth - 48, 20);
     return selection.reduce((tallest, tactic) => {
       const lines = countWrappedLines(
         `${tactic.name} ${tactic.code}`,

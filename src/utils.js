@@ -104,9 +104,12 @@
 
   function getMinRequiredColumnWidth(selection, fontSize = 12, padding = 24) {
     let maxWordWidth = 0;
+    const headerFontSize = Math.round(fontSize * 1.33);
+
     (selection || []).forEach((tactic) => {
       (tactic.name || "").split(/\s+/).forEach((w) => {
-        maxWordWidth = Math.max(maxWordWidth, estimateTextWidth(w, fontSize, "bold"));
+        const wHeader = estimateTextWidth(w, headerFontSize, "bold") + 48;
+        maxWordWidth = Math.max(maxWordWidth, wHeader - padding);
       });
       (tactic.techniques || []).forEach((technique) => {
         (technique.name || "").split(/\s+/).forEach((w) => {
