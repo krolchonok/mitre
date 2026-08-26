@@ -577,12 +577,53 @@
       };
     }
 
+    const scaledColumns = scaleColumns(best.placed.columns, best.scale);
+
+    // If widthMode is not fixed and fitting to a sheet, stretch columns to fill 100% of sheet width evenly
+    if (options.widthMode !== "fixed" && pageTarget) {
+      const rows = [];
+      for (let i = 0; i < scaledColumns.length; i += best.perRow) {
+        rows.push(scaledColumns.slice(i, i + best.perRow));
+      }
+
+      rows.forEach((rowCols) => {
+        const numCols = rowCols.length;
+        if (!numCols) return;
+
+        const totalGaps = (numCols - 1) * layout.columnGap * best.scale;
+        const totalMargins = layout.originX * 2 * best.scale;
+        const availableWidth = pageTarget.width - totalMargins - totalGaps;
+        if (availableWidth > 0) {
+          const newColWidth = availableWidth / numCols;
+
+          rowCols.forEach((col, idx) => {
+            const oldX = col.x;
+            const oldW = col.width;
+            const newX = layout.originX * best.scale + idx * (newColWidth + layout.columnGap * best.scale);
+
+            col.x = newX;
+            col.width = newColWidth;
+
+            col.techniques.forEach((t) => {
+              t.x = newX;
+              t.width = newColWidth;
+              t.subtechniques.forEach((s) => {
+                s.x = newX + (s.x - oldX);
+                s.width = newColWidth - (oldW - s.width);
+                s.accentX = newX + (s.accentX - oldX);
+              });
+            });
+          });
+        }
+      });
+    }
+
     return {
       isFstecMode,
       layout,
-      columns: scaleColumns(best.placed.columns, best.scale),
+      columns: scaledColumns,
       bounds: {
-        width: best.placed.width * best.scale,
+        width: pageTarget ? pageTarget.width : best.placed.width * best.scale,
         height: best.placed.height * best.scale,
       },
       scale: best.scale,
