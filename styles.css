@@ -1055,6 +1055,15 @@ input[type="checkbox"]:checked::before {
   flex: 1 1 240px;
 }
 
+.pv-field--checkbox {
+  flex: 0 0 auto;
+}
+
+.pv-field--checkbox .checkbox-row {
+  height: 34px;
+  white-space: nowrap;
+}
+
 .pv-label {
   font-size: 12px;
   color: var(--text-secondary);

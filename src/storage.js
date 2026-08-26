@@ -73,7 +73,9 @@
       columnWidth: config.DRAWIO_LAYOUT.columnWidth,
       fontSize: config.DRAWIO_LAYOUT.baseFontSize,
       headerFontSize: config.DRAWIO_LAYOUT.headerFontSize,
+      titleFontSize: config.DRAWIO_LAYOUT.titleFontSize,
       widthMode: "auto",
+      allowUpscale: false,
     };
     return saved && typeof saved === "object"
       ? { ...defaults, ...saved }

@@ -118,7 +118,9 @@
       columnWidth: getColumnWidth(),
       fontSize: getFontSize(),
       headerFontSize: getHeaderFontSize(),
+      titleFontSize: getTitleFontSize(),
       widthMode: getWidthMode(),
+      allowUpscale: getAllowUpscale(),
     };
     savePageFitState(next);
     syncFromSettings(next);
@@ -174,6 +176,19 @@
       : Mitre.config.DRAWIO_LAYOUT.headerFontSize;
   }
 
+  function getTitleFontSize() {
+    const source = Mitre.dom.pageFitTitleFont || Mitre.dom.pvTitleFont;
+    return source
+      ? Mitre.preview.clampTitleFontSize(source.value)
+      : Mitre.config.DRAWIO_LAYOUT.titleFontSize;
+  }
+
+  function getAllowUpscale() {
+    return Boolean(
+      Mitre.dom.pageFitAllowUpscale?.checked || Mitre.dom.pvAllowUpscale?.checked
+    );
+  }
+
   function handleGenerate() {
     const selection = collectSelection();
     if (!selection.length) {
@@ -186,7 +201,9 @@
       columnWidth: getColumnWidth(),
       fontSize: getFontSize(),
       headerFontSize: getHeaderFontSize(),
+      titleFontSize: getTitleFontSize(),
       widthMode: getWidthMode(),
+      allowUpscale: getAllowUpscale(),
     });
     downloadFile(`mitre-${Date.now()}.drawio`, xml);
   }
@@ -223,7 +240,9 @@
       columnWidth: getColumnWidth(),
       fontSize: getFontSize(),
       headerFontSize: getHeaderFontSize(),
+      titleFontSize: getTitleFontSize(),
       widthMode: getWidthMode(),
+      allowUpscale: getAllowUpscale(),
     });
     downloadFile(`fstec-${Date.now()}.drawio`, xml);
   }

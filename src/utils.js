@@ -114,8 +114,11 @@
   // off the 12px reference, so the default size reproduces the original
   // single-line heights exactly.
   function computeCardHeight(text, baseHeight, columnWidth, options = {}) {
-    const { compact = false, fontSize = BASE_FONT_SIZE } = options;
-    const ratio = fontSize / BASE_FONT_SIZE;
+    const { compact = false, fontSize = BASE_FONT_SIZE, titleFontSize = fontSize } = options;
+    // The card stacks a bold title (code) line above the description text;
+    // its minimum height must clear whichever of the two fonts is larger,
+    // or a title font set well above the description font overflows the row.
+    const ratio = Math.max(fontSize, titleFontSize) / BASE_FONT_SIZE;
     const padding = compact ? 12 : 20;
     const lines = countWrappedLines(
       text,

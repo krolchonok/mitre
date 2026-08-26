@@ -23,6 +23,15 @@
     );
   }
 
+  function clampTitleFontSize(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return DRAWIO_LAYOUT.titleFontSize;
+    return Math.min(
+      Math.max(Math.round(n), DRAWIO_LAYOUT.minTitleFontSize),
+      DRAWIO_LAYOUT.maxTitleFontSize
+    );
+  }
+
   function clampFontSize(value) {
     const n = Number(value);
     if (!Number.isFinite(n) || n <= 0) return DRAWIO_LAYOUT.baseFontSize;
@@ -159,7 +168,11 @@
   // Recomputed per candidate width, because wider columns rewrap text and
   // therefore lower the maximum.
   function computeCellSize(selection, columnWidth, layout, opts) {
-    const compact = { compact: opts.isFstecMode, fontSize: opts.fontSize };
+    const compact = {
+      compact: opts.isFstecMode,
+      fontSize: opts.fontSize,
+      titleFontSize: opts.titleFontSize,
+    };
     // Floor is the height of a single line at this font — taking the raw
     // base height instead pinned small fonts to a 52px cell they did not
     // need, which read as bloated padding.
@@ -308,7 +321,7 @@
   // column width that would fill the sheet, and the arrangement needing the
   // least shrinking wins. Wider columns rewrap text into fewer lines, so
   // width and height genuinely trade against each other here.
-  function fitToPage(selection, layout, opts, pageTarget, flow, fixedWidth) {
+  function fitToPage(selection, layout, opts, pageTarget, flow, fixedWidth, allowUpscale) {
     const minWidth = layout.minColumnWidth || 150;
     const maxWidth = layout.maxColumnWidth || 420;
     let best = null;
@@ -341,11 +354,16 @@
       candidates.forEach((columnWidth) => {
         const built = buildAllColumns(selection, columnWidth, layout, opts);
         const placed = placeColumns(built, perRow, layout);
-        const scale = Math.min(
-          1,
+        // Normally scale only ever shrinks (never past 1) — a small
+        // selection is left at its natural size rather than blown up.
+        // With upscaling allowed the diagram is grown to the sheet's
+        // tighter dimension too, capped so a handful of techniques on an
+        // A3 sheet doesn't turn into oversized cards.
+        const fitRatio = Math.min(
           pageTarget.width / placed.width,
           pageTarget.height / placed.height
         );
+        const scale = allowUpscale ? Math.min(fitRatio, 4) : Math.min(1, fitRatio);
 
         // Prefer the least shrinking. Ties are broken by how close the
         // diagram's proportions are to the sheet's, which varies smoothly
@@ -382,6 +400,7 @@
 
     const fontSize = clampFontSize(options.fontSize);
     const headerFontSize = clampHeaderFontSize(options.headerFontSize);
+    const titleFontSize = clampTitleFontSize(options.titleFontSize);
 
     // Gutters and margins are part of the type scale, not fixed furniture.
     // Left absolute they stayed 30px wide while the cards shrank, so at a
@@ -414,6 +433,7 @@
       isFstecMode,
       fontSize,
       headerFontSize,
+      titleFontSize,
     };
     const pageTarget = resolvePageTarget(options.pageFit);
 
@@ -431,7 +451,8 @@
     // collapsed to 40 — the header font never moved.
     const widthRatio = Math.max(
       fontSize / DRAWIO_LAYOUT.baseFontSize,
-      headerFontSize / DRAWIO_LAYOUT.headerFontSize
+      headerFontSize / DRAWIO_LAYOUT.headerFontSize,
+      titleFontSize / DRAWIO_LAYOUT.titleFontSize
     );
     const requestedWidth =
       rawWidth && options.widthMode !== "fixed"
@@ -462,6 +483,7 @@
         scale: 1,
         fontSize,
         headerFontSize,
+        titleFontSize,
         requestedWidth,
         perRow: built.length,
         columnWidth: naturalWidth,
@@ -476,7 +498,8 @@
       opts,
       pageTarget,
       options.pageFit?.flow,
-      requestedWidth
+      requestedWidth,
+      Boolean(options.allowUpscale)
     );
     if (!best) {
       const built = buildAllColumns(selection, layout.columnWidth, layout, opts);
@@ -489,6 +512,7 @@
         scale: 1,
         fontSize,
         headerFontSize,
+        titleFontSize,
         requestedWidth,
         perRow: built.length,
         columnWidth: layout.columnWidth,
@@ -508,6 +532,7 @@
       scale: best.scale,
       fontSize,
       headerFontSize,
+      titleFontSize,
       requestedWidth,
       perRow: best.perRow,
       columnWidth: best.columnWidth,

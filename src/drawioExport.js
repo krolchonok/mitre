@@ -13,8 +13,9 @@
       pageHeight,
       fontSize,
       headerFontSize,
+      titleFontSize,
     } = computeLayout(selection, options);
-    const F = fontScale(fontSize, headerFontSize, isFstecMode);
+    const F = fontScale(fontSize, headerFontSize, isFstecMode, titleFontSize);
     const fs = (basePx) => Math.max(1, Math.round(basePx * scale));
 
     const doc = document.implementation.createDocument("", "", null);
@@ -96,7 +97,7 @@
 
     columns.forEach((tactic) => {
       const tacticLabel = isFstecMode
-        ? `<div style="line-height: 130%;${WRAP}"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name}</font></div><div style="font-size: ${fs(F.tacticCode)}px;">${tactic.code}</div>`
+        ? `<div style="line-height: 130%;${WRAP}"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name}</font></div><div style="font-size: ${fs(F.tacticCode)}px;${WRAP}">${tactic.code}</div>`
         : `<div style="line-height: 100%;${WRAP}"><font style="font-size: ${fs(F.tacticName)}px;">${tactic.name} ${tactic.code}</font></div>`;
 
       createCell({
@@ -114,11 +115,11 @@
         const techniqueValue = isFstecMode
           ? [
               technique.code
-                ? `<div style="font-size: ${fs(F.techniqueCode)}px;"><b>${technique.code}</b></div>`
+                ? `<div style="font-size: ${fs(F.techniqueCode)}px;${WRAP}"><b>${technique.code}</b></div>`
                 : "",
               `<div style="font-size: ${fs(F.techniqueName)}px;${WRAP}">${technique.name}</div>`,
             ].join("")
-          : `<span style="font-size: ${fs(F.techniqueCode)}px;"><b>${technique.code}</b></span><div style="font-size: ${fs(F.techniqueName)}px;${WRAP}">${technique.name}</div>`;
+          : `<span style="font-size: ${fs(F.techniqueCode)}px;${WRAP}"><b>${technique.code}</b></span><div style="font-size: ${fs(F.techniqueName)}px;${WRAP}">${technique.name}</div>`;
 
         createCell({
           value: techniqueValue,
@@ -132,7 +133,7 @@
         });
 
         technique.subtechniques.forEach((sub) => {
-          const subValue = `<span style="font-size: ${fs(F.subCode)}px;"><b>${sub.code}</b></span><div style="font-size: ${fs(F.subName)}px;${WRAP}">${sub.name}</div>`;
+          const subValue = `<span style="font-size: ${fs(F.subCode)}px;${WRAP}"><b>${sub.code}</b></span><div style="font-size: ${fs(F.subName)}px;${WRAP}">${sub.name}</div>`;
 
           createCell({
             value: subValue,

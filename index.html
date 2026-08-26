@@ -197,10 +197,17 @@
           </div>
           <div class="preset-row">
             <label class="field field--narrow">
-              <span class="field-label">Шрифт плиток, px</span>
+              <span class="field-label">Шрифт описания техники, px</span>
               <input id="page-fit-font" type="number" min="6" max="24" step="1" value="12" />
             </label>
             <input id="page-fit-font-range" type="range" min="6" max="24" step="1" value="12" />
+          </div>
+          <div class="preset-row">
+            <label class="field field--narrow">
+              <span class="field-label">Шрифт названия техники, px</span>
+              <input id="page-fit-title-font" type="number" min="6" max="28" step="1" value="14" />
+            </label>
+            <input id="page-fit-title-font-range" type="range" min="6" max="28" step="1" value="14" />
           </div>
           <div class="preset-row">
             <label class="field field--narrow">
@@ -209,10 +216,18 @@
             </label>
             <input id="page-fit-head-font-range" type="range" min="8" max="32" step="1" value="16" />
           </div>
+          <div class="preset-row">
+            <label class="checkbox-row">
+              <input id="page-fit-allow-upscale" type="checkbox" />
+              <span>Растягивать, если схема меньше листа</span>
+            </label>
+          </div>
           <p class="filter-note" id="page-fit-hint">
             «Авто» подбирает ширину колонок и переносит тактики рядами, чтобы
             шрифт остался крупным. «В один ряд» сохраняет цепочку тактик слева
-            направо и ужимает схему сильнее.
+            направо и ужимает схему сильнее. Растягивание увеличивает схему до
+            заполнения листа, если выбрано мало техник — само по себе оно
+            границы листа не ужимает.
           </p>
         </section>
       </section>
@@ -318,12 +333,20 @@
           <input id="pv-width-value" type="number" min="120" max="600" step="1" value="230" class="pv-number" />
         </label>
         <label class="pv-field pv-field--slider">
-          <span class="pv-label">Шрифт плиток, px</span>
+          <span class="pv-label">Шрифт описания техники, px</span>
           <input id="pv-font" type="range" min="6" max="24" step="1" value="12" />
         </label>
         <label class="pv-field">
           <span class="pv-label">Точно</span>
           <input id="pv-font-value" type="number" min="6" max="24" step="1" value="12" class="pv-number" />
+        </label>
+        <label class="pv-field pv-field--slider">
+          <span class="pv-label">Шрифт названия техники, px</span>
+          <input id="pv-title-font" type="range" min="6" max="28" step="1" value="14" />
+        </label>
+        <label class="pv-field">
+          <span class="pv-label">Точно</span>
+          <input id="pv-title-font-value" type="number" min="6" max="28" step="1" value="14" class="pv-number" />
         </label>
         <label class="pv-field pv-field--slider">
           <span class="pv-label">Шрифт заголовков, px</span>
@@ -332,6 +355,13 @@
         <label class="pv-field">
           <span class="pv-label">Точно</span>
           <input id="pv-head-font-value" type="number" min="8" max="32" step="1" value="16" class="pv-number" />
+        </label>
+        <label class="pv-field pv-field--checkbox">
+          <span class="pv-label">&nbsp;</span>
+          <span class="checkbox-row">
+            <input id="pv-allow-upscale" type="checkbox" />
+            <span>Растянуть по листу</span>
+          </span>
         </label>
         <button type="button" class="btn btn-small" id="pv-reset">Сбросить</button>
         <div class="pv-readout" id="pv-readout"></div>

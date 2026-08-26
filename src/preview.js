@@ -24,10 +24,16 @@
     pageFitWidthMode,
     pageFitHeadFont,
     pageFitHeadFontRange,
+    pageFitTitleFont,
+    pageFitTitleFontRange,
+    pageFitAllowUpscale,
     pvFont,
     pvFontValue,
     pvHeadFont,
     pvHeadFontValue,
+    pvTitleFont,
+    pvTitleFontValue,
+    pvAllowUpscale,
   } = Mitre.dom;
   const { state } = Mitre;
   const { computeLayout } = Mitre.layout;
@@ -39,6 +45,7 @@
   const DEFAULT_WIDTH = DRAWIO_LAYOUT.columnWidth;
   const DEFAULT_FONT = DRAWIO_LAYOUT.baseFontSize;
   const DEFAULT_HEAD_FONT = DRAWIO_LAYOUT.headerFontSize;
+  const DEFAULT_TITLE_FONT = DRAWIO_LAYOUT.titleFontSize;
 
   function togglePreviewWindow() {
     if (!previewWindow) return;
@@ -76,6 +83,8 @@
       fontSize: pvFont ? Number(pvFont.value) : DEFAULT_FONT,
       widthMode: pageFitWidthMode ? pageFitWidthMode.value : "auto",
       headerFontSize: pvHeadFont ? Number(pvHeadFont.value) : DEFAULT_HEAD_FONT,
+      titleFontSize: pvTitleFont ? Number(pvTitleFont.value) : DEFAULT_TITLE_FONT,
+      allowUpscale: Boolean(pvAllowUpscale?.checked || pageFitAllowUpscale?.checked),
     };
   }
 
@@ -90,7 +99,9 @@
       columnWidth: s.columnWidth,
       fontSize: s.fontSize,
       headerFontSize: s.headerFontSize,
+      titleFontSize: s.titleFontSize,
       widthMode: s.widthMode,
+      allowUpscale: s.allowUpscale,
     });
   }
 
@@ -122,6 +133,9 @@
   const FONT_INPUTS = () => [pvFont, pvFontValue, pageFitFont, pageFitFontRange];
   const HEAD_FONT_INPUTS = () =>
     [pvHeadFont, pvHeadFontValue, pageFitHeadFont, pageFitHeadFontRange];
+  const TITLE_FONT_INPUTS = () =>
+    [pvTitleFont, pvTitleFontValue, pageFitTitleFont, pageFitTitleFontRange];
+  const ALLOW_UPSCALE_INPUTS = () => [pvAllowUpscale, pageFitAllowUpscale];
 
   function clampHeadFontSize(value) {
     const n = Number(value);
@@ -142,6 +156,41 @@
       updatePreview();
     }
     return f;
+  }
+
+  function clampTitleFontSize(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return DEFAULT_TITLE_FONT;
+    return Math.min(
+      Math.max(Math.round(n), DRAWIO_LAYOUT.minTitleFontSize),
+      DRAWIO_LAYOUT.maxTitleFontSize
+    );
+  }
+
+  function setTitleFontSize(value, { silent = false } = {}) {
+    const f = clampTitleFontSize(value);
+    TITLE_FONT_INPUTS().forEach((el) => {
+      if (el && el.value !== String(f)) el.value = String(f);
+    });
+    if (!silent) {
+      syncSettingsPanel(currentSettings());
+      updatePreview();
+    }
+    return f;
+  }
+
+  // The preview and settings-panel checkboxes are two views of one flag —
+  // kept in lockstep the same way the width/font inputs are.
+  function setAllowUpscale(value, { silent = false } = {}) {
+    const v = Boolean(value);
+    ALLOW_UPSCALE_INPUTS().forEach((el) => {
+      if (el && el.checked !== v) el.checked = v;
+    });
+    if (!silent) {
+      syncSettingsPanel(currentSettings());
+      updatePreview();
+    }
+    return v;
   }
 
   function clampFontSize(value) {
@@ -176,6 +225,10 @@
     if (saved.fontSize) setFontSize(saved.fontSize, { silent: true });
     if (saved.headerFontSize)
       setHeadFontSize(saved.headerFontSize, { silent: true });
+    if (saved.titleFontSize)
+      setTitleFontSize(saved.titleFontSize, { silent: true });
+    if (typeof saved.allowUpscale === "boolean")
+      setAllowUpscale(saved.allowUpscale, { silent: true });
   }
 
   function handleControlChange() {
@@ -195,10 +248,20 @@
     setHeadFontSize(event.target.value);
   }
 
+  function handleTitleFontInput(event) {
+    setTitleFontSize(event.target.value);
+  }
+
+  function handleAllowUpscaleChange(event) {
+    setAllowUpscale(event.target.checked);
+  }
+
   function resetControls() {
     if (pvFlow) pvFlow.value = "auto";
     setFontSize(DEFAULT_FONT, { silent: true });
     setHeadFontSize(DEFAULT_HEAD_FONT, { silent: true });
+    setTitleFontSize(DEFAULT_TITLE_FONT, { silent: true });
+    setAllowUpscale(false, { silent: true });
     setColumnWidth(DEFAULT_WIDTH);
   }
 
@@ -240,11 +303,18 @@
       columnWidth: s.columnWidth,
       fontSize: s.fontSize,
       headerFontSize: s.headerFontSize,
+      titleFontSize: s.titleFontSize,
       widthMode: s.widthMode,
+      allowUpscale: s.allowUpscale,
     });
 
     const { columns, bounds, scale, perRow, pageWidth, pageHeight } = result;
-    const F = fontScale(result.fontSize, result.headerFontSize, isFstecMode);
+    const F = fontScale(
+      result.fontSize,
+      result.headerFontSize,
+      isFstecMode,
+      result.titleFontSize
+    );
     const showSheet = s.size !== "none";
 
     // Canvas is the sheet when one is chosen, otherwise the diagram itself.
@@ -389,6 +459,12 @@
     HEAD_FONT_INPUTS().forEach((el) => {
       if (el) el.addEventListener("input", handleHeadFontInput);
     });
+    TITLE_FONT_INPUTS().forEach((el) => {
+      if (el) el.addEventListener("input", handleTitleFontInput);
+    });
+    ALLOW_UPSCALE_INPUTS().forEach((el) => {
+      if (el) el.addEventListener("change", handleAllowUpscaleChange);
+    });
     if (pvReset) pvReset.addEventListener("click", resetControls);
     window.addEventListener("resize", updatePreview);
   }
@@ -402,5 +478,6 @@
     clampWidth,
     clampFontSize,
     clampHeadFontSize,
+    clampTitleFontSize,
   };
 })();

@@ -15,6 +15,9 @@
       headerFontSize: 16,
       minHeaderFontSize: 8,
       maxHeaderFontSize: 32,
+      titleFontSize: 14,
+      minTitleFontSize: 6,
+      maxTitleFontSize: 28,
       columnGap: 30,
       headerHeight: 40,
       techniqueBaseHeight: 52,
@@ -49,21 +52,23 @@
         "rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fontColor=#000000;",
     },
 
-    // Two independent bases: `base` sizes the tiles (techniques and their
-    // subtechniques), `head` sizes the tactic headers. `head` is the tactic
-    // label size directly, so the number in the UI is the number on screen.
-    // At base 12 / head 16 these reproduce the original hardcoded sizes.
-    fontScale(base, head, isFstec) {
+    // Three independent bases: `base` sizes the description text (technique
+    // and subtechnique names), `head` sizes the tactic headers, `title`
+    // sizes the bold technique/subtechnique code line. `head` and `title`
+    // are the on-screen label sizes directly, so the number in the UI is
+    // the number on screen. At base 12 / head 16 / title 14 these reproduce
+    // the original hardcoded sizes.
+    fontScale(base, head, isFstec, title = base + 2) {
       return isFstec
         ? {
             tacticStyle: head + 1,
             tacticName: head - 2,
             tacticCode: head - 4,
             techniqueStyle: base,
-            techniqueCode: base + 1,
+            techniqueCode: title,
             techniqueName: base,
             subStyle: base - 2,
-            subCode: base,
+            subCode: title,
             subName: base - 2,
           }
         : {
@@ -71,10 +76,10 @@
             tacticName: head,
             tacticCode: head,
             techniqueStyle: base,
-            techniqueCode: base + 2,
+            techniqueCode: title,
             techniqueName: base,
             subStyle: base - 2,
-            subCode: base,
+            subCode: title,
             subName: base - 2,
           };
     },
