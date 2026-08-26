@@ -6,14 +6,21 @@
 
   function buildDrawioXml(selection, options = {}) {
     // For Draw.io export, compute 1:1 full-scale cells (scale = 1.0)
-    // so Draw.io displays large 13-16px readable fonts and generous column widths!
-    // If the selection is large (> 7 tactics) or flow is multi, place columns in multi-row bands (perRow = 5)
-    // so the diagram stays compact (~1200px wide) and opens in Draw.io at 100% zoom!
-    const isMulti = options.pageFit?.flow === "multi" || selection.length > 7;
+    // so Draw.io displays large readable fonts and generous column widths!
+    const userFlow = options.pageFit?.flow;
+    const isMulti = userFlow === "multi" || userFlow === "auto";
+
+    // If multi-row, balance the row splits so no row is left with 1 lonely column
+    let perRow = selection.length;
+    if (isMulti && selection.length > 6) {
+      const targetRows = selection.length <= 12 ? 2 : Math.ceil(selection.length / 5);
+      perRow = Math.ceil(selection.length / targetRows);
+    }
+
     const exportOptions = {
       ...options,
       allowUpscale: false,
-      perRow: isMulti ? Math.min(5, selection.length) : selection.length,
+      perRow: perRow,
       pageFit: { size: "none", flow: isMulti ? "multi" : "single" }
     };
 
