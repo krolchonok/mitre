@@ -27,6 +27,7 @@
     pageFitTitleFont,
     pageFitTitleFontRange,
     pageFitAllowUpscale,
+    pageFitEqualizeBtn,
     pvFont,
     pvFontValue,
     pvHeadFont,
@@ -34,6 +35,7 @@
     pvTitleFont,
     pvTitleFontValue,
     pvAllowUpscale,
+    pvEqualizeBtn,
   } = Mitre.dom;
   const { state } = Mitre;
   const { computeLayout } = Mitre.layout;
@@ -101,6 +103,10 @@
       headerFontSize: pvHeadFont ? Number(pvHeadFont.value) : DEFAULT_HEAD_FONT,
       titleFontSize: pvTitleFont ? Number(pvTitleFont.value) : DEFAULT_TITLE_FONT,
       allowUpscale: Boolean(pvAllowUpscale?.checked || pageFitAllowUpscale?.checked),
+      equalizeHeight: Boolean(
+        pvEqualizeBtn?.classList.contains("is-active") ||
+          pageFitEqualizeBtn?.classList.contains("is-active")
+      ),
     };
   }
 
@@ -118,6 +124,7 @@
       titleFontSize: s.titleFontSize,
       widthMode: s.widthMode,
       allowUpscale: s.allowUpscale,
+      equalizeHeight: s.equalizeHeight,
     });
   }
 
@@ -152,6 +159,7 @@
   const TITLE_FONT_INPUTS = () =>
     [pvTitleFont, pvTitleFontValue, pageFitTitleFont, pageFitTitleFontRange];
   const ALLOW_UPSCALE_INPUTS = () => [pvAllowUpscale, pageFitAllowUpscale];
+  const EQUALIZE_BUTTONS = () => [pvEqualizeBtn, pageFitEqualizeBtn];
 
   function clampHeadFontSize(value) {
     const n = Number(value);
@@ -209,6 +217,22 @@
     return v;
   }
 
+  // A pressed-state button rather than a checkbox — same lockstep pattern,
+  // toggled via .is-active instead of .checked.
+  function setEqualizeHeight(value, { silent = false } = {}) {
+    const v = Boolean(value);
+    EQUALIZE_BUTTONS().forEach((el) => {
+      if (!el) return;
+      el.classList.toggle("is-active", v);
+      el.setAttribute("aria-pressed", String(v));
+    });
+    if (!silent) {
+      syncSettingsPanel(currentSettings());
+      updatePreview();
+    }
+    return v;
+  }
+
   function clampFontSize(value) {
     const n = Number(value);
     if (!Number.isFinite(n)) return DEFAULT_FONT;
@@ -245,6 +269,8 @@
       setTitleFontSize(saved.titleFontSize, { silent: true });
     if (typeof saved.allowUpscale === "boolean")
       setAllowUpscale(saved.allowUpscale, { silent: true });
+    if (typeof saved.equalizeHeight === "boolean")
+      setEqualizeHeight(saved.equalizeHeight, { silent: true });
   }
 
   function handleControlChange() {
@@ -272,12 +298,17 @@
     setAllowUpscale(event.target.checked);
   }
 
+  function handleEqualizeClick() {
+    setEqualizeHeight(!currentSettings().equalizeHeight);
+  }
+
   function resetControls() {
     if (pvFlow) pvFlow.value = "auto";
     setFontSize(DEFAULT_FONT, { silent: true });
     setHeadFontSize(DEFAULT_HEAD_FONT, { silent: true });
     setTitleFontSize(DEFAULT_TITLE_FONT, { silent: true });
     setAllowUpscale(false, { silent: true });
+    setEqualizeHeight(false, { silent: true });
     setColumnWidth(DEFAULT_WIDTH);
   }
 
@@ -322,6 +353,7 @@
       titleFontSize: s.titleFontSize,
       widthMode: s.widthMode,
       allowUpscale: s.allowUpscale,
+      equalizeHeight: s.equalizeHeight,
     });
 
     const { columns, bounds, scale, perRow, pageWidth, pageHeight } = result;
@@ -480,6 +512,9 @@
     });
     ALLOW_UPSCALE_INPUTS().forEach((el) => {
       if (el) el.addEventListener("change", handleAllowUpscaleChange);
+    });
+    EQUALIZE_BUTTONS().forEach((el) => {
+      if (el) el.addEventListener("click", handleEqualizeClick);
     });
     if (pvReset) pvReset.addEventListener("click", resetControls);
     window.addEventListener("resize", updatePreview);

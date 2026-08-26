@@ -222,12 +222,20 @@
               <span>Растягивать, если схема меньше листа</span>
             </label>
           </div>
+          <div class="preset-row">
+            <button type="button" class="btn" id="page-fit-equalize-btn">
+              Выровнять высоту категорий
+            </button>
+          </div>
           <p class="filter-note" id="page-fit-hint">
             «Авто» подбирает ширину колонок и переносит тактики рядами, чтобы
             шрифт остался крупным. «В один ряд» сохраняет цепочку тактик слева
             направо и ужимает схему сильнее. Растягивание увеличивает схему до
             заполнения листа, если выбрано мало техник — само по себе оно
-            границы листа не ужимает.
+            границы листа не ужимает. «Выровнять высоту категорий» досчитывает
+            отступы между техниками так, чтобы каждая колонка в ряду доходила
+            ровно до высоты самой длинной — без обрезки и без лишних пустот
+            снизу.
           </p>
         </section>
       </section>
@@ -362,6 +370,17 @@
             <input id="pv-allow-upscale" type="checkbox" />
             <span>Растянуть по листу</span>
           </span>
+        </label>
+        <label class="pv-field">
+          <span class="pv-label">&nbsp;</span>
+          <button
+            type="button"
+            class="btn btn-small"
+            id="pv-equalize-btn"
+            title="Досчитать отступы так, чтобы категории в ряду были одинаковой высоты"
+          >
+            Выровнять высоту категорий
+          </button>
         </label>
         <button type="button" class="btn btn-small" id="pv-reset">Сбросить</button>
         <div class="pv-readout" id="pv-readout"></div>

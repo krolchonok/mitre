@@ -255,17 +255,51 @@
     );
   }
 
+  // Distributes the leftover height between a column's technique blocks so
+  // it ends flush with a target height instead of trailing off early. Card
+  // sizes are untouched — only the gaps grow — so this can never overflow a
+  // card's own content or affect line wrapping. There are (n + 1) gaps in
+  // buildColumn's cursor (one before the first technique, one after each),
+  // so growing every gap by the same amount adds exactly (n + 1) * extra to
+  // the total, which is what extra is solved for below.
+  function stretchColumn(col, targetHeight) {
+    const n = col.techniques.length;
+    if (!n || targetHeight <= col.totalHeight) return col;
+    const extra = (targetHeight - col.totalHeight) / (n + 1);
+    return {
+      ...col,
+      totalHeight: targetHeight,
+      techniques: col.techniques.map((t, i) => {
+        const shift = (i + 1) * extra;
+        return {
+          ...t,
+          relY: t.relY + shift,
+          subtechniques: t.subtechniques.map((s) => ({
+            ...s,
+            relY: s.relY + shift,
+          })),
+        };
+      }),
+    };
+  }
+
   // Places built columns into `perRow` bands and resolves relative geometry
   // into absolute coordinates. One band per row of tactics; a band is as tall
-  // as its tallest column.
-  function placeColumns(built, perRow, layout) {
+  // as its tallest column. With equalizeHeight on, every column in a band is
+  // stretched to that same height instead of a shorter tactic's column
+  // trailing off with blank space under it while its row-mates run on.
+  function placeColumns(built, perRow, layout, equalizeHeight) {
     const bandGap = layout.verticalGap * 2;
     const columns = [];
     let bandTop = layout.originY;
     let widest = 0;
 
     for (let start = 0; start < built.length; start += perRow) {
-      const band = built.slice(start, start + perRow);
+      let band = built.slice(start, start + perRow);
+      if (equalizeHeight && band.length > 1) {
+        const bandHeight = Math.max(...band.map((c) => c.totalHeight));
+        band = band.map((c) => stretchColumn(c, bandHeight));
+      }
       let x = layout.originX;
 
       band.forEach((col) => {
@@ -321,7 +355,7 @@
   // column width that would fill the sheet, and the arrangement needing the
   // least shrinking wins. Wider columns rewrap text into fewer lines, so
   // width and height genuinely trade against each other here.
-  function fitToPage(selection, layout, opts, pageTarget, flow, fixedWidth, allowUpscale) {
+  function fitToPage(selection, layout, opts, pageTarget, flow, fixedWidth, allowUpscale, equalizeHeight) {
     const minWidth = layout.minColumnWidth || 150;
     const maxWidth = layout.maxColumnWidth || 420;
     let best = null;
@@ -353,7 +387,7 @@
 
       candidates.forEach((columnWidth) => {
         const built = buildAllColumns(selection, columnWidth, layout, opts);
-        const placed = placeColumns(built, perRow, layout);
+        const placed = placeColumns(built, perRow, layout, equalizeHeight);
         // Normally scale only ever shrinks (never past 1) — a small
         // selection is left at its natural size rather than blown up.
         // With upscaling allowed the diagram is grown to the sheet's
@@ -473,7 +507,12 @@
           ? computeFstecColumnWidths(selection, layout)[0] || layout.columnWidth
           : layout.columnWidth);
       const built = buildAllColumns(selection, naturalWidth, layout, opts);
-      const placed = placeColumns(built, built.length || 1, layout);
+      const placed = placeColumns(
+        built,
+        built.length || 1,
+        layout,
+        Boolean(options.equalizeHeight)
+      );
 
       return {
         isFstecMode,
@@ -499,11 +538,17 @@
       pageTarget,
       options.pageFit?.flow,
       requestedWidth,
-      Boolean(options.allowUpscale)
+      Boolean(options.allowUpscale),
+      Boolean(options.equalizeHeight)
     );
     if (!best) {
       const built = buildAllColumns(selection, layout.columnWidth, layout, opts);
-      const placed = placeColumns(built, built.length || 1, layout);
+      const placed = placeColumns(
+        built,
+        built.length || 1,
+        layout,
+        Boolean(options.equalizeHeight)
+      );
       return {
         isFstecMode,
         layout,

@@ -261,6 +261,20 @@ button:disabled {
   color: var(--text-secondary);
 }
 
+/* Generic pressed state for a plain .btn used as a toggle (equalize-height,
+   etc.) — same red-fill language as .tactics-tab.is-active and
+   .preview-mode-btn.is-active, without needing their own component. */
+.btn.is-active {
+  background: var(--red);
+  border-color: var(--red);
+  color: #ffffff;
+}
+
+.btn.is-active:hover:not(:disabled) {
+  background: var(--red-hover);
+  border-color: var(--red-hover);
+}
+
 .btn-ghost:hover:not(:disabled) {
   background: var(--ui);
   color: var(--text);

@@ -76,6 +76,7 @@
       titleFontSize: config.DRAWIO_LAYOUT.titleFontSize,
       widthMode: "auto",
       allowUpscale: false,
+      equalizeHeight: false,
     };
     return saved && typeof saved === "object"
       ? { ...defaults, ...saved }

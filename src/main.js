@@ -121,6 +121,7 @@
       titleFontSize: getTitleFontSize(),
       widthMode: getWidthMode(),
       allowUpscale: getAllowUpscale(),
+      equalizeHeight: getEqualizeHeight(),
     };
     savePageFitState(next);
     syncFromSettings(next);
@@ -189,6 +190,13 @@
     );
   }
 
+  function getEqualizeHeight() {
+    return Boolean(
+      Mitre.dom.pageFitEqualizeBtn?.classList.contains("is-active") ||
+        Mitre.dom.pvEqualizeBtn?.classList.contains("is-active")
+    );
+  }
+
   function handleGenerate() {
     const selection = collectSelection();
     if (!selection.length) {
@@ -204,6 +212,7 @@
       titleFontSize: getTitleFontSize(),
       widthMode: getWidthMode(),
       allowUpscale: getAllowUpscale(),
+      equalizeHeight: getEqualizeHeight(),
     });
     downloadFile(`mitre-${Date.now()}.drawio`, xml);
   }
@@ -243,6 +252,7 @@
       titleFontSize: getTitleFontSize(),
       widthMode: getWidthMode(),
       allowUpscale: getAllowUpscale(),
+      equalizeHeight: getEqualizeHeight(),
     });
     downloadFile(`fstec-${Date.now()}.drawio`, xml);
   }
