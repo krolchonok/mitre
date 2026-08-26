@@ -15,13 +15,13 @@
       headerFontSize: 16,
       minHeaderFontSize: 8,
       maxHeaderFontSize: 32,
-      titleFontSize: 14,
+      titleFontSize: 15,
       minTitleFontSize: 6,
       maxTitleFontSize: 28,
       columnGap: 30,
-      headerHeight: 40,
-      techniqueBaseHeight: 52,
-      subTechniqueBaseHeight: 46,
+      headerHeight: 46,
+      techniqueBaseHeight: 64,
+      subTechniqueBaseHeight: 52,
       verticalGap: 18,
       subAccentWidth: 6,
     },
@@ -45,9 +45,9 @@
       tactic:
         "shape=step;perimeter=stepPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=10;strokeColor=none;fontColor=#FFFFFF;fontStyle=1;align=center;rounded=0;verticalAlign=middle;fontFamily=Helvetica;spacingTop=6;spacingBottom=6;spacingRight=24;spacingLeft=24;",
       technique:
-        "rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fontColor=#000000;align=left;verticalAlign=middle;fontFamily=Helvetica;spacingTop=2;spacingBottom=2;spacingRight=2;spacingLeft=6;",
+        "rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fontColor=#000000;align=left;verticalAlign=middle;fontFamily=Helvetica;spacingTop=4;spacingBottom=4;spacingRight=4;spacingLeft=8;",
       subtech:
-        "rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fontColor=#000000;align=left;verticalAlign=middle;fontFamily=Helvetica;spacingTop=2;spacingBottom=2;spacingRight=2;spacingLeft=6;",
+        "rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fontColor=#000000;align=left;verticalAlign=middle;fontFamily=Helvetica;spacingTop=4;spacingBottom=4;spacingRight=4;spacingLeft=8;",
       subAccent:
         "rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fontColor=#000000;",
     },
@@ -56,9 +56,9 @@
     // and subtechnique names), `head` sizes the tactic headers, `title`
     // sizes the bold technique/subtechnique code line. `head` and `title`
     // are the on-screen label sizes directly, so the number in the UI is
-    // the number on screen. At base 12 / head 16 / title 14 these reproduce
-    // the original hardcoded sizes.
-    fontScale(base, head, isFstec, title = base + 2) {
+    // the number on screen. At base 12 / head 16 / title 15 these reproduce
+    // generous readable sizes.
+    fontScale(base, head, isFstec, title = base + 3) {
       return isFstec
         ? {
             tacticStyle: head + 1,
