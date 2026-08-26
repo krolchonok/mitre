@@ -145,27 +145,19 @@
     return targetFont;
   }
 
-  // Card geometry is driven by the font: a larger size both wraps the name
-  // into more lines and needs taller lines to hold them. Everything scales
-  // off the 12px reference, so the default size reproduces the original
-  // single-line heights exactly.
   function computeCardHeight(text, baseHeight, columnWidth, options = {}) {
-    const { compact = false, fontSize = BASE_FONT_SIZE, titleFontSize = fontSize } = options;
-    // The card stacks a bold title (code) line above the description text;
-    // its minimum height must clear whichever of the two fonts is larger,
-    // or a title font set well above the description font overflows the row.
-    const ratio = Math.max(fontSize, titleFontSize) / BASE_FONT_SIZE;
-    const padding = compact ? 12 : 20;
+    const { compact = false, fontSize = 16, titleFontSize = 20 } = options;
+    const padding = compact ? 8 : 12;
     const lines = countWrappedLines(
       text,
-      Math.max(columnWidth - padding, 20),
+      Math.max(columnWidth - padding * 2, 20),
       fontSize
     );
-    const lineStep = Math.round((compact ? 12 : 16) * ratio);
-    const adjustedBase = Math.round(
-      (compact ? Math.max(baseHeight - 10, 32) : baseHeight) * ratio
-    );
-    return adjustedBase + Math.max(0, lines - 1) * lineStep;
+    const titleH = Math.round(titleFontSize * 1.3);
+    const descLineH = Math.round(fontSize * 1.25);
+    const totalTextH = titleH + Math.max(1, lines) * descLineH;
+    const verticalPad = compact ? 10 : 16;
+    return Math.max(baseHeight || 54, totalTextH + verticalPad);
   }
 
   function downloadFile(arg1, arg2, contentType = "application/xml") {
