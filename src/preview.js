@@ -47,14 +47,30 @@
   const DEFAULT_HEAD_FONT = DRAWIO_LAYOUT.headerFontSize;
   const DEFAULT_TITLE_FONT = DRAWIO_LAYOUT.titleFontSize;
 
-  function togglePreviewWindow() {
+  function isPreviewOpen() {
+    return Boolean(previewWindow?.classList.contains("is-open"));
+  }
+
+  function openPreviewWindow() {
+    if (!previewWindow || isPreviewOpen()) return;
+    previewWindow.classList.add("is-open");
+    document.body.classList.add("no-scroll");
+    updatePreview();
+  }
+
+  function closePreviewWindow() {
     if (!previewWindow) return;
-    const isHidden = previewWindow.style.display === "none";
-    previewWindow.style.display = isHidden ? "block" : "none";
-    if (isHidden) {
-      updatePreview();
-      previewWindow.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
+    previewWindow.classList.remove("is-open");
+    document.body.classList.remove("no-scroll");
+  }
+
+  function togglePreviewWindow() {
+    if (isPreviewOpen()) closePreviewWindow();
+    else openPreviewWindow();
+  }
+
+  function handlePreviewKeydown(event) {
+    if (event.key === "Escape" && isPreviewOpen()) closePreviewWindow();
   }
 
   function setPreviewMode(mode) {
@@ -266,7 +282,7 @@
   }
 
   function updatePreview() {
-    if (!previewWindow || previewWindow.style.display === "none") return;
+    if (!isPreviewOpen()) return;
     if (!previewWorkspace) return;
     previewWorkspace.innerHTML = "";
 
@@ -467,10 +483,12 @@
     });
     if (pvReset) pvReset.addEventListener("click", resetControls);
     window.addEventListener("resize", updatePreview);
+    document.addEventListener("keydown", handlePreviewKeydown);
   }
 
   Mitre.preview = {
     togglePreviewWindow,
+    closePreviewWindow,
     setPreviewMode,
     updatePreview,
     wirePreviewControls,

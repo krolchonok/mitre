@@ -97,6 +97,12 @@ body {
   font-size: 14px;
 }
 
+/* Locked while the full-screen preview is open, so the page underneath
+   can't scroll out from behind it. */
+body.no-scroll {
+  overflow: hidden;
+}
+
 :focus-visible {
   outline: 2px solid var(--red);
   outline-offset: 2px;
@@ -970,14 +976,25 @@ input[type="checkbox"]:checked::before {
 /* Preview panel                                                     */
 /* ---------------------------------------------------------------- */
 
+/* A full-screen takeover rather than an inline panel: at the fixed 560px
+   panel this replaced, a real diagram of more than a couple of tactics
+   was reduced to a postage stamp. Fixed + inset:0 covers the viewport
+   regardless of where the page has scrolled to; flex-direction:column
+   lets the workspace claim every pixel the header/controls don't need. */
 .preview-panel {
-  margin: 0 32px 32px;
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  flex-direction: column;
+  margin: 0;
   background: var(--page);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-  /* Keeps scrollIntoView from parking the panel under the sticky chrome. */
-  scroll-margin-top: 200px;
+  border: none;
+  border-radius: 0;
+}
+
+.preview-panel.is-open {
+  display: flex;
 }
 
 .preview-panel-header {
@@ -987,6 +1004,7 @@ input[type="checkbox"]:checked::before {
   padding: 12px 16px;
   background: var(--ui);
   border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
 }
 
 .preview-panel-title {
@@ -1015,6 +1033,7 @@ input[type="checkbox"]:checked::before {
   gap: 8px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
 }
 
 .preview-mode-btn {
@@ -1042,6 +1061,7 @@ input[type="checkbox"]:checked::before {
   padding: 12px 16px;
   background: #fafafa;
   border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
 }
 
 .pv-field {
@@ -1157,6 +1177,12 @@ input[type="range"]::-moz-range-thumb {
 
 .preview-panel-body {
   padding: 12px 16px 16px;
+  flex: 1 1 auto;
+  /* Without this a flex child sizes to its content's natural height, which
+     for the workspace is whatever the diagram needs — so the panel grew
+     past the viewport instead of the workspace scrolling inside it. */
+  min-height: 0;
+  display: flex;
 }
 
 .preview-workspace {
@@ -1166,8 +1192,9 @@ input[type="range"]::-moz-range-thumb {
   justify-content: center;
   background: #eef0f3;
   overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
-  height: 560px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1293,11 +1320,6 @@ input[type="range"]::-moz-range-thumb {
   .tactics {
     padding-left: 16px;
     padding-right: 16px;
-  }
-
-  .preview-panel {
-    margin-left: 16px;
-    margin-right: 16px;
   }
 
   /* Chrome takes too much of a short viewport once the toolbar wraps. */

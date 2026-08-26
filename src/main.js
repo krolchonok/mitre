@@ -21,7 +21,6 @@
     settingsPanel,
     textImportBtn,
     previewToggleBtn,
-    previewWindow,
     previewCloseBtn,
     previewModeMitre,
     previewModeFstec,
@@ -72,6 +71,7 @@
   const {
     updatePreview,
     togglePreviewWindow,
+    closePreviewWindow,
     setPreviewMode,
     wirePreviewControls,
     syncFromSettings,
@@ -325,9 +325,7 @@
       previewToggleBtn.addEventListener("click", togglePreviewWindow);
     }
     if (previewCloseBtn) {
-      previewCloseBtn.addEventListener("click", () => {
-        if (previewWindow) previewWindow.style.display = "none";
-      });
+      previewCloseBtn.addEventListener("click", closePreviewWindow);
     }
     if (previewModeMitre) {
       previewModeMitre.addEventListener("click", () => setPreviewMode("mitre"));
