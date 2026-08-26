@@ -5,12 +5,19 @@
   const { computeLayout } = Mitre.layout;
 
   function buildDrawioXml(selection, options = {}) {
-    // For Draw.io export, compute 1:1 full-scale cells (scale = 1.0)
-    // so Draw.io displays large readable fonts and generous column widths!
+    // The export must render exactly what the preview showed: preview.js's
+    // own contract is "whatever is on screen is exactly what the export
+    // buttons will produce". So the page-fit choice (none/A4/A3) is passed
+    // through untouched — the same computeLayout call the preview makes —
+    // instead of being forced to "none" here. Only the multi-row balancing
+    // for the "flow" is decided locally, same as before.
     const userFlow = options.pageFit?.flow;
     const isMulti = userFlow === "multi" || userFlow === "auto";
 
-    // If multi-row, balance the row splits so no row is left with 1 lonely column
+    // If multi-row, balance the row splits so no row is left with 1 lonely column.
+    // This only takes effect when no page size is chosen (pageFit.size === "none"):
+    // with a real page target, fitToPage searches every split itself and this
+    // perRow is ignored (see computeLayout).
     let perRow = selection.length;
     if (isMulti && selection.length > 6) {
       const targetRows = selection.length <= 12 ? 2 : Math.ceil(selection.length / 5);
@@ -19,15 +26,18 @@
 
     const exportOptions = {
       ...options,
-      allowUpscale: false,
-      perRow: perRow,
-      pageFit: { size: "none", flow: isMulti ? "multi" : "single" }
+      perRow,
+      pageFit: {
+        ...options.pageFit,
+        flow: isMulti ? "multi" : "single",
+      },
     };
 
     const {
       isFstecMode,
       columns,
       bounds,
+      scale,
       fontSize,
       headerFontSize,
       titleFontSize,
@@ -44,9 +54,14 @@
     const canvasWidth = Math.max(paperSize.width, Math.round(bounds.width + 120));
     const canvasHeight = Math.max(paperSize.height, Math.round(bounds.height + 120));
 
-    const scale = 1.0;
     const F = fontScale(fontSize, headerFontSize, isFstecMode, titleFontSize);
-    const fs = (basePx) => Math.max(14, Math.round(basePx));
+    // Matches preview.js's renderTechniqueCard/renderSubtechCard exactly:
+    // the nominal font size scaled by the same factor the geometry was
+    // scaled by, so text and box always agree. No artificial floor here —
+    // if a selection is large enough that page-fit needs to shrink hard,
+    // the preview already showed that (and warns below scale 35%); export
+    // must match it instead of silently overriding it back up.
+    const fs = (basePx) => Math.max(1, Math.round(basePx * scale));
 
     const doc = document.implementation.createDocument("", "", null);
     const mxfile = doc.createElement("mxfile");

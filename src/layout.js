@@ -9,38 +9,14 @@
     normalizeMitreCode,
     countWrappedLines,
     getMinRequiredColumnWidth,
+    clampFontSize,
+    clampHeaderFontSize,
+    clampTitleFontSize,
   } = Mitre.utils;
   const { computeFstecColumnWidths, computeMaxFstecHeaderHeight } =
     Mitre.fstec;
 
   const RECON_TACTIC_CODE = "TA0043";
-
-  function clampHeaderFontSize(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n) || n <= 0) return DRAWIO_LAYOUT.headerFontSize;
-    return Math.min(
-      Math.max(Math.round(n), DRAWIO_LAYOUT.minHeaderFontSize),
-      DRAWIO_LAYOUT.maxHeaderFontSize
-    );
-  }
-
-  function clampTitleFontSize(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n) || n <= 0) return DRAWIO_LAYOUT.titleFontSize;
-    return Math.min(
-      Math.max(Math.round(n), DRAWIO_LAYOUT.minTitleFontSize),
-      DRAWIO_LAYOUT.maxTitleFontSize
-    );
-  }
-
-  function clampFontSize(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n) || n <= 0) return DRAWIO_LAYOUT.baseFontSize;
-    return Math.min(
-      Math.max(Math.round(n), DRAWIO_LAYOUT.minFontSize),
-      DRAWIO_LAYOUT.maxFontSize
-    );
-  }
 
   // Resolves a pageFit option ({ size: 'a4'|'a3', orientation: 'portrait'|'landscape' })
   // into target pixel dimensions, or null if fitting is disabled. A caller
@@ -641,6 +617,13 @@
   // Calculates optimal layout parameters (column width, font sizes)
   // to fit the chosen sheet format (A4/A3) in a single row ("в одну строку")
   // guaranteeing large, crystal-clear readable font sizes for any selection size.
+  //
+  // The objective is a plain, checkable rule instead of a weighted score:
+  // try font sizes largest first, and the first one that fits the sheet
+  // with zero shrinking (scale >= 1) wins outright — nothing smaller in
+  // the list could ever beat a font that didn't need to shrink at all. Only
+  // if no font size fits cleanly do we fall back to whichever (font,
+  // width) leaves the largest *effective* font size after shrinking.
   function autoFitLayout(selection, options = {}) {
     if (!selection || !selection.length) return null;
 
@@ -652,25 +635,31 @@
 
     const orientation = options.orientation || "landscape";
     const flow = options.flow || "single";
-    const equalizeHeight = false;
 
     const fontSizes = [22, 20, 18, 16, 15, 14, 13, 12];
     const widths = [200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 440, 480];
+    const MIN_LEGIBLE_EFFECTIVE_FONT = 10;
 
-    // Try A4, then A3 to find a sheet size that preserves large legible text
+    const buildCandidate = (targetSize, fontSize, headerFontSize, titleFontSize, res) => ({
+      size: targetSize,
+      orientation,
+      flow,
+      columnWidth: res.columnWidth,
+      fontSize,
+      headerFontSize,
+      titleFontSize,
+      equalizeHeight: false,
+      allowUpscale: true,
+    });
+
+    // Try A4, then A3 to find a sheet size that preserves large legible text.
     for (const targetSize of ["a4", "a3"]) {
-      let bestCandidate = null;
-      let bestScore = -Infinity;
+      let bestShrunk = null;
+      let bestEffectiveFont = -Infinity;
 
       for (const fontSize of fontSizes) {
-        const headerFontSize = Math.min(
-          DRAWIO_LAYOUT.maxHeaderFontSize,
-          Math.max(DRAWIO_LAYOUT.minHeaderFontSize, Math.round(fontSize * 1.33))
-        );
-        const titleFontSize = Math.min(
-          DRAWIO_LAYOUT.maxTitleFontSize,
-          Math.max(DRAWIO_LAYOUT.minTitleFontSize, Math.round(fontSize * 1.15))
-        );
+        const headerFontSize = clampHeaderFontSize(fontSize * 1.33);
+        const titleFontSize = clampTitleFontSize(fontSize * 1.15);
 
         const minReqWidth = getMinRequiredColumnWidth(
           selection,
@@ -695,40 +684,27 @@
             equalizeHeight: false,
           });
 
+          if (res.scale >= 1) {
+            // Fits at full size untouched. Widths are tried narrowest
+            // first, so this is the tightest fit at the largest font that
+            // needed no shrinking — nothing left to search beats it.
+            return buildCandidate(targetSize, fontSize, headerFontSize, titleFontSize, res);
+          }
+
           const effectiveFont = fontSize * res.scale;
-          const effectiveWidth = columnWidth * res.scale;
-
-          const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
-          const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
-          const areaFill = widthRatio * heightRatio;
-
-          // DISCARD MICRO-PRINT: effective font MUST be >= 10px and scale >= 0.60 for printed sheets!
-          if (effectiveFont < 10.0 || res.scale < 0.60 || effectiveWidth < 140) continue;
-
-          let score = (widthRatio * 2000) + (effectiveFont * 500) + (areaFill * 800) + (res.scale * 300);
-
-          if (score > bestScore) {
-            bestScore = score;
-            bestCandidate = {
-              size: targetSize,
-              orientation,
-              flow,
-              columnWidth: res.columnWidth,
-              fontSize,
-              headerFontSize,
-              titleFontSize,
-              equalizeHeight: false,
-              allowUpscale: true,
-            };
+          if (effectiveFont > bestEffectiveFont && effectiveFont >= MIN_LEGIBLE_EFFECTIVE_FONT) {
+            bestEffectiveFont = effectiveFont;
+            bestShrunk = buildCandidate(targetSize, fontSize, headerFontSize, titleFontSize, res);
           }
         }
       }
 
-      if (bestCandidate) return bestCandidate;
+      if (bestShrunk) return bestShrunk;
     }
 
-    // When the selection has tall columns (10+ techniques), fitting on A4/A3 would crush fonts down to 5-7px.
-    // We automatically choose "none" (1:1 Full Scale) so letters are 100% full 18px-24px size: huge, bold, and readable!
+    // Nothing reaches even a legible shrink on A4 or A3 (very large
+    // selections): keep the schema at full natural size rather than print
+    // unreadable micro-text — huge, bold, and readable beats "fits the page".
     return {
       size: "none",
       orientation,

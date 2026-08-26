@@ -43,6 +43,12 @@
   } = Mitre.dom;
   const { state } = Mitre;
   const { computeLayout, autoFitLayout } = Mitre.layout;
+  const {
+    clampFontSize,
+    clampHeaderFontSize,
+    clampTitleFontSize,
+    clampColumnWidth,
+  } = Mitre.utils;
   const { DRAWIO_LAYOUT, fontScale } = Mitre.config;
   const { buildFstecSelectionFromSelection, FSTEC_TECHNIQUES } = Mitre.fstec;
   const { collectSelection } = Mitre.selection;
@@ -137,16 +143,8 @@
   // them, so they can never drift apart.
   const WIDTH_INPUTS = () => [pvWidth, pvWidthValue, pageFitWidth, pageFitWidthRange];
 
-  function clampWidth(value) {
-    const min = pvWidth ? Number(pvWidth.min) : 120;
-    const max = pvWidth ? Number(pvWidth.max) : 600;
-    const n = Number(value);
-    if (!Number.isFinite(n)) return DEFAULT_WIDTH;
-    return Math.min(Math.max(Math.round(n), min), max);
-  }
-
   function setColumnWidth(value, { silent = false } = {}) {
-    const w = clampWidth(value);
+    const w = clampColumnWidth(value);
     WIDTH_INPUTS().forEach((el) => {
       if (el && el.value !== String(w)) el.value = String(w);
     });
@@ -165,17 +163,8 @@
   const ALLOW_UPSCALE_INPUTS = () => [pvAllowUpscale, pageFitAllowUpscale];
   const EQUALIZE_BUTTONS = () => [pvEqualizeBtn, pageFitEqualizeBtn];
 
-  function clampHeadFontSize(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return DEFAULT_HEAD_FONT;
-    return Math.min(
-      Math.max(Math.round(n), DRAWIO_LAYOUT.minHeaderFontSize),
-      DRAWIO_LAYOUT.maxHeaderFontSize
-    );
-  }
-
   function setHeadFontSize(value, { silent = false } = {}) {
-    const f = clampHeadFontSize(value);
+    const f = clampHeaderFontSize(value);
     HEAD_FONT_INPUTS().forEach((el) => {
       if (el && el.value !== String(f)) el.value = String(f);
     });
@@ -184,15 +173,6 @@
       updatePreview();
     }
     return f;
-  }
-
-  function clampTitleFontSize(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return DEFAULT_TITLE_FONT;
-    return Math.min(
-      Math.max(Math.round(n), DRAWIO_LAYOUT.minTitleFontSize),
-      DRAWIO_LAYOUT.maxTitleFontSize
-    );
   }
 
   function setTitleFontSize(value, { silent = false } = {}) {
@@ -235,15 +215,6 @@
       updatePreview();
     }
     return v;
-  }
-
-  function clampFontSize(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return DEFAULT_FONT;
-    return Math.min(
-      Math.max(Math.round(n), DRAWIO_LAYOUT.minFontSize),
-      DRAWIO_LAYOUT.maxFontSize
-    );
   }
 
   function setFontSize(value, { silent = false } = {}) {
@@ -616,9 +587,9 @@
     wirePreviewControls,
     syncFromSettings,
     handleAutoFitClick,
-    clampWidth,
+    clampWidth: clampColumnWidth,
     clampFontSize,
-    clampHeadFontSize,
+    clampHeadFontSize: clampHeaderFontSize,
     clampTitleFontSize,
   };
 })();

@@ -68,6 +68,55 @@
 
   const BASE_FONT_SIZE = 12;
 
+  // Single source of truth for every "font size setting" clamp in the app.
+  // layout.js (actual geometry) and preview.js (the sliders) used to each
+  // keep their own copy of these four functions with bounds that could
+  // silently drift from each other and from the <input min/max> in
+  // index.html. Now both read the same bounds from DRAWIO_LAYOUT, and
+  // DRAWIO_LAYOUT's max values are set to match the sliders exactly (see
+  // config.js), so "what the setting allows" and "what gets applied" can
+  // never disagree.
+  function clampToRange(value, min, max, fallback) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return fallback;
+    return Math.min(Math.max(Math.round(n), min), max);
+  }
+
+  function clampFontSize(value) {
+    const L = Mitre.config.DRAWIO_LAYOUT;
+    return clampToRange(value, L.minFontSize, L.maxFontSize, L.baseFontSize);
+  }
+
+  function clampHeaderFontSize(value) {
+    const L = Mitre.config.DRAWIO_LAYOUT;
+    return clampToRange(
+      value,
+      L.minHeaderFontSize,
+      L.maxHeaderFontSize,
+      L.headerFontSize
+    );
+  }
+
+  function clampTitleFontSize(value) {
+    const L = Mitre.config.DRAWIO_LAYOUT;
+    return clampToRange(
+      value,
+      L.minTitleFontSize,
+      L.maxTitleFontSize,
+      L.titleFontSize
+    );
+  }
+
+  function clampColumnWidth(value) {
+    const L = Mitre.config.DRAWIO_LAYOUT;
+    return clampToRange(
+      value,
+      L.minColumnWidth,
+      L.maxColumnWidth,
+      L.columnWidth
+    );
+  }
+
   // Real word wrapping against measured glyph widths, in the font the export
   // actually uses. The old character-count estimate treated every glyph as
   // equally wide and over-reported lines for most names, which inflated every
@@ -193,5 +242,9 @@
     fitTacticHeaderFont,
     computeCardHeight,
     downloadFile,
+    clampFontSize,
+    clampHeaderFontSize,
+    clampTitleFontSize,
+    clampColumnWidth,
   };
 })();
