@@ -21,7 +21,7 @@
       columnGap: 30,
       headerHeight: 46,
       techniqueBaseHeight: 64,
-      subTechniqueBaseHeight: 52,
+      subTechniqueBaseHeight: 64,
       verticalGap: 18,
       subAccentWidth: 6,
     },
@@ -56,8 +56,7 @@
     // and subtechnique names), `head` sizes the tactic headers, `title`
     // sizes the bold technique/subtechnique code line. `head` and `title`
     // are the on-screen label sizes directly, so the number in the UI is
-    // the number on screen. At base 12 / head 16 / title 15 these reproduce
-    // generous readable sizes.
+    // the number on screen. Subtechnique names and titles match technique sizes.
     fontScale(base, head, isFstec, title = base + 3) {
       return isFstec
         ? {
@@ -67,9 +66,9 @@
             techniqueStyle: base,
             techniqueCode: title,
             techniqueName: base,
-            subStyle: base - 2,
+            subStyle: base,
             subCode: title,
-            subName: base - 2,
+            subName: base,
           }
         : {
             tacticStyle: head + 1,
@@ -78,9 +77,9 @@
             techniqueStyle: base,
             techniqueCode: title,
             techniqueName: base,
-            subStyle: base - 2,
+            subStyle: base,
             subCode: title,
-            subName: base - 2,
+            subName: base,
           };
     },
 
