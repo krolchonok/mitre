@@ -653,11 +653,13 @@
         });
 
         const effectiveFont = fontSize * res.scale;
+        if (res.scale < 0.38) continue; // Prevent excessive shrinking for long diagrams
+
         const widthRatio = Math.min(1, res.bounds.width / res.pageWidth);
         const heightRatio = Math.min(1, res.bounds.height / res.pageHeight);
 
-        // Scoring: maximize scale factor and text legibility with natural card stacking
-        let score = res.scale * 1000 + effectiveFont * 50 + widthRatio * 300 + heightRatio * 200;
+        // Scoring: maximize printed effective font size, base font size, scale, and area fill
+        let score = effectiveFont * 300 + fontSize * 60 + res.scale * 400 + widthRatio * 200 + heightRatio * 100;
 
         if (score > bestScore) {
           bestScore = score;
