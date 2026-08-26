@@ -27,6 +27,7 @@
     const {
       isFstecMode,
       columns,
+      bounds,
       fontSize,
       headerFontSize,
       titleFontSize,
@@ -39,9 +40,13 @@
       ? PAGE_SIZES[targetSize][targetOrient]
       : { width: 1169, height: 827 };
 
+    // Canvas size in Draw.io: match the actual diagram dimensions so Draw.io opens at 100% zoom with huge text!
+    const canvasWidth = Math.max(paperSize.width, Math.round(bounds.width + 120));
+    const canvasHeight = Math.max(paperSize.height, Math.round(bounds.height + 120));
+
     const scale = 1.0;
     const F = fontScale(fontSize, headerFontSize, isFstecMode, titleFontSize);
-    const fs = (basePx) => Math.max(12, Math.round(basePx));
+    const fs = (basePx) => Math.max(14, Math.round(basePx));
 
     const doc = document.implementation.createDocument("", "", null);
     const mxfile = doc.createElement("mxfile");
@@ -57,6 +62,8 @@
     diagram.setAttribute("name", isFstecMode ? "ФСТЭК схема" : "MITRE схема");
     mxfile.appendChild(diagram);
 
+    const isInfinitePage = !options.pageFit || options.pageFit.size === "none";
+
     const graphModel = doc.createElement("mxGraphModel");
     Object.entries({
       dx: "1042",
@@ -68,10 +75,10 @@
       connect: "1",
       arrows: "1",
       fold: "1",
-      page: "1",
+      page: isInfinitePage ? "0" : "1",
       pageScale: "1",
-      pageWidth: String(paperSize.width),
-      pageHeight: String(paperSize.height),
+      pageWidth: String(canvasWidth),
+      pageHeight: String(canvasHeight),
       math: "0",
       shadow: "0",
     }).forEach(([key, value]) => graphModel.setAttribute(key, value));
